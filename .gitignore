@@ -1,2 +1,4 @@
-.env
+evm
 node_modules
+*.log
+.git
