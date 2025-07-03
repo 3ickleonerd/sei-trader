@@ -11,10 +11,12 @@ db.exec(
 type DatabaseAccessRecord = zInfer<typeof zDatabaseAccessRecord>;
 
 export function addDatabaseAccessRecord(record: DatabaseAccessRecord) {
+  const { name, owner, address } = zDatabaseAccessRecord().parse(record);
+
   db.exec("INSERT INTO databases (owner, name, address) VALUES (?, ?, ?)", [
-    record.owner,
-    record.name,
-    record.address,
+    owner,
+    name,
+    address,
   ]);
 }
 
