@@ -21,7 +21,7 @@
     }
   },
   "dependencies": {
-    "@joe-re/sql-parser": "^1.7.1",
+    "node-sql-parser": "^5.3.10",
     "viem": "^2.31.6",
     "zod": "^3.25.67"
   },
