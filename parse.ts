@@ -1,12 +1,31 @@
 import { Parser } from "node-sql-parser";
-import { getTableColumns } from "./getTableColumns.ts"; 
+import { getTableColumns } from "./getTableColumns.ts";
 const parser = new Parser();
 
-const INTERNAL_MARKER = "sei_caret_";
-const ALLOWED_QUERY_TYPES = ["create", "insert" , "select" , "delete"] as const;
+const INTERNAL_MARKER: string = "sei_caret_";
+const ALLOWED_QUERY_TYPES = ["create", "insert", "select", "delete"] as const;
 type AllowedQueryType = (typeof ALLOWED_QUERY_TYPES)[number];
 
-async function getAugmentedQuery(query: string) {
+type AugmentedQueryResult = {
+  query: string;
+  code: number;
+};
+
+interface ColumnRef {
+  type: "column_ref";
+  table: string | null;
+  column: string;
+}
+
+interface ColumnDefinition {
+  column: ColumnRef;
+  definition: {
+    dataType: string;
+  };
+  resource: "column";
+}
+
+async function getAugmentedQuery(query: string): Promise<AugmentedQueryResult> {
   if (query.includes(INTERNAL_MARKER)) {
     throw new Error("Do not pass in internal queries");
   }
@@ -23,7 +42,7 @@ async function getAugmentedQuery(query: string) {
       throw new Error("No column definitions found");
     }
 
-    ast.create_definitions.push({
+    const newColumnDef: ColumnDefinition = {
       column: {
         type: "column_ref",
         table: null,
@@ -33,7 +52,9 @@ async function getAugmentedQuery(query: string) {
         dataType: "INTEGER",
       },
       resource: "column",
-    });
+    };
+
+    ast.create_definitions.push(newColumnDef);
 
     const newSQL = parser.sqlify(ast, { database: "sqlite" });
     const cleanedSQL = newSQL.replace(/"([^"]+)"/g, "$1");
@@ -41,7 +62,7 @@ async function getAugmentedQuery(query: string) {
     return { query: cleanedSQL, code: 0 };
   }
 
-   if (ast.type === "insert") {
+  if (ast.type === "insert" && "values" in ast && Array.isArray(ast.values)) {
     const newColumn = INTERNAL_MARKER + "onchain_index";
     if (!ast.columns) {
       throw new Error("Insert query must have columns specified.");
@@ -61,11 +82,10 @@ async function getAugmentedQuery(query: string) {
     const newSQL = parser.sqlify(ast, { database: "sqlite" });
 
     let cleanedSQL = newSQL.replace(/"([^"]+)"/g, "$1");
-    
-    if (!cleanedSQL.trim().endsWith(";")) {
-        cleanedSQL += ";";
-    }
 
+    if (!cleanedSQL.trim().endsWith(";")) {
+      cleanedSQL += ";";
+    }
 
     return { query: cleanedSQL, code: 0 };
   }
@@ -93,15 +113,13 @@ async function getAugmentedQuery(query: string) {
     return { query: sql.replace(/"([^"]+)"/g, "$1"), code: 0 };
   }
 
-
-  if( ast.type === "delete"){
+  if (ast.type === "delete") {
     return { query, code: 0 };
   }
 
-  if( ast.type === "update"){
+  if (ast.type === "update") {
     return { query, code: 0 };
   }
-
 
   return { query, code: 1 };
 }
