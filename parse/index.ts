@@ -1,23 +1,18 @@
 import { Parser } from "node-sql-parser";
-import { getTableColumns } from "./getTableColumns.ts";
+import { getTableColumns } from "./utils";
 const parser = new Parser();
 
 const INTERNAL_MARKER: string = "sei_caret_";
 const ALLOWED_QUERY_TYPES = ["create", "insert", "select", "delete"] as const;
-type AllowedQueryType = (typeof ALLOWED_QUERY_TYPES)[number];
+export type AllowedQueryType = (typeof ALLOWED_QUERY_TYPES)[number];
 
-type AugmentedQueryResult = {
-  query: string;
-  code: number;
-};
-
-interface ColumnRef {
+export interface ColumnRef {
   type: "column_ref";
   table: string | null;
   column: string;
 }
 
-interface ColumnDefinition {
+export interface ColumnDefinition {
   column: ColumnRef;
   definition: {
     dataType: string;
@@ -25,7 +20,7 @@ interface ColumnDefinition {
   resource: "column";
 }
 
-async function getAugmentedQuery(query: string): Promise<AugmentedQueryResult> {
+export function getAugmentedQuery(query: string) {
   if (query.includes(INTERNAL_MARKER)) {
     throw new Error("Do not pass in internal queries");
   }
@@ -33,11 +28,14 @@ async function getAugmentedQuery(query: string): Promise<AugmentedQueryResult> {
   const astRaw = parser.astify(query);
   const ast = Array.isArray(astRaw) ? astRaw[0] : astRaw;
 
-  if (!ALLOWED_QUERY_TYPES.includes(ast.type as AllowedQueryType)) {
-    throw new Error("Unsupported query type: ${ast.type}");
+  const type = ast.type;
+  let result: string = query;
+
+  if (!ALLOWED_QUERY_TYPES.includes(type as AllowedQueryType)) {
+    throw new Error(`Unsupported query type: ${type}`);
   }
 
-  if (ast.type === "create") {
+  if (type === "create") {
     if (!ast.create_definitions) {
       throw new Error("No column definitions found");
     }
@@ -59,10 +57,14 @@ async function getAugmentedQuery(query: string): Promise<AugmentedQueryResult> {
     const newSQL = parser.sqlify(ast, { database: "sqlite" });
     const cleanedSQL = newSQL.replace(/"([^"]+)"/g, "$1");
 
-    return { query: cleanedSQL, code: 0 };
+    if (!cleanedSQL.trim().endsWith(";")) {
+      result = cleanedSQL + ";";
+    } else {
+      result = cleanedSQL;
+    }
   }
 
-  if (ast.type === "insert" && "values" in ast && Array.isArray(ast.values)) {
+  if (type === "insert" && "values" in ast && Array.isArray(ast.values)) {
     const newColumn = INTERNAL_MARKER + "onchain_index";
     if (!ast.columns) {
       throw new Error("Insert query must have columns specified.");
@@ -87,10 +89,10 @@ async function getAugmentedQuery(query: string): Promise<AugmentedQueryResult> {
       cleanedSQL += ";";
     }
 
-    return { query: cleanedSQL, code: 0 };
+    result = cleanedSQL;
   }
 
-  if (ast.type === "select") {
+  if (type === "select") {
     const isSelectAll =
       ast.columns.length === 1 &&
       ast.columns[0].expr.type === "column_ref" &&
@@ -100,8 +102,7 @@ async function getAugmentedQuery(query: string): Promise<AugmentedQueryResult> {
       const table = ast.from?.[0]?.table;
       if (!table) throw new Error("Missing table in SELECT");
 
-      const visibleColumns = await getTableColumns(table);
-      // there will a function that fetches the columns from the database and returns with the removed indexer column
+      const visibleColumns = []; //await getTableColumns(table);
 
       ast.columns = visibleColumns.map((col) => ({
         expr: { type: "column_ref", table: null, column: col },
@@ -110,20 +111,21 @@ async function getAugmentedQuery(query: string): Promise<AugmentedQueryResult> {
     }
 
     const sql = parser.sqlify(ast, { database: "sqlite" });
-    return { query: sql.replace(/"([^"]+)"/g, "$1"), code: 0 };
+
+    result = sql.replace(/"([^"]+)"/g, "$1");
   }
 
-  if (ast.type === "delete") {
-    return { query, code: 0 };
+  if (type === "delete") {
+    result = parser
+      .sqlify(ast, { database: "sqlite" })
+      .replace(/"([^"]+)"/g, "$1");
   }
 
-  if (ast.type === "update") {
-    return { query, code: 0 };
+  if (type === "update") {
+    result = parser
+      .sqlify(ast, { database: "sqlite" })
+      .replace(/"([^"]+)"/g, "$1");
   }
 
-  return { query, code: 1 };
+  throw new Error(`Unsupported query type: ${type}`);
 }
-
-const q =
-  "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT);";
-console.log(getAugmentedQuery(q));

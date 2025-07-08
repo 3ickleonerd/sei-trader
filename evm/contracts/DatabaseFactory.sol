@@ -14,9 +14,13 @@ contract DatabaseFactory {
     );
 
     function createDatabase(string calldata name_) external {
+        require(
+            databasesByName[msg.sender][name_] == address(0),
+            "Already name exists"
+        );
         address newDatabase = address(new Database());
-        databases.push(newDatabase);
-        emit DatabaseCreated(newDatabase, name_, msg.sender);
+        databasesByName[msg.sender][name_] = newDatabase;
+        emit DatabaseCreated(msg.sender, name_, newDatabase);
     }
 
     function getDatabases() external view returns (address[] memory) {
