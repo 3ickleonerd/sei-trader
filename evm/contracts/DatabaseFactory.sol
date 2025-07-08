@@ -5,7 +5,7 @@ import "./Database.sol";
 import "./AuxillaryListUint256.sol";
 
 contract DatabaseFactory {
-    mapping(address => AuxillaryList) public databasesByOwner;
+    mapping(address => AuxillaryListUint256) public databasesByOwner;
     address[] public databases;
 
     event DatabaseCreated(address indexed creator, address indexed dbAddress);
@@ -16,7 +16,7 @@ contract DatabaseFactory {
             "You already have a database"
         );
 
-        AuxillaryList newDatabase = new AuxillaryList();
+        AuxillaryListUint256 newDatabase = new AuxillaryListUint256();
         databasesByOwner[msg.sender] = newDatabase;
         databases.push(address(newDatabase));
 

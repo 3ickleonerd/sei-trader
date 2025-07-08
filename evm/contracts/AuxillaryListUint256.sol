@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract AuxillaryList is Ownable {
+contract AuxillaryListUint256 is Ownable {
     uint256[] private _values;
     mapping(uint256 => uint256) private _valueIndexes;
     mapping(uint256 => bool) private _valueExists;
