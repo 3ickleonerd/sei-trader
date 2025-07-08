@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-// import "hardhat/console.sol";
 import "./Database.sol";
+import "./AuxillaryListUint256.sol";
 
 contract DatabaseFactory {
-    mapping(address => mapping(string => address)) public databasesByName;
+    mapping(address => AuxillaryList) public databasesByOwner;
+    address[] public databases;
 
-    event DatabaseCreated(
-        address indexed creator,
-        string name,
-        address indexed dbAddress
-    );
+    event DatabaseCreated(address indexed creator, address indexed dbAddress);
 
-    function createDatabase(string calldata name_) external {
+    function createDatabase() external {
         require(
-            databasesByName[msg.sender][name_] == address(0),
-            "Already name exists"
+            databasesByOwner[msg.sender].length() == 0,
+            "You already have a database"
         );
-        address newDatabase = address(new Database());
-        databasesByName[msg.sender][name_] = newDatabase;
-        emit DatabaseCreated(msg.sender, name_, newDatabase);
+
+        AuxillaryList newDatabase = new AuxillaryList();
+        databasesByOwner[msg.sender] = newDatabase;
+        databases.push(address(newDatabase));
+
+        emit DatabaseCreated(msg.sender, "New Database", address(newDatabase));
     }
 
     function getDatabases() external view returns (address[] memory) {
