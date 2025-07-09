@@ -10,16 +10,16 @@ contract DatabaseFactory {
 
     event DatabaseCreated(address indexed creator, address indexed dbAddress);
 
-    function createDatabase() external {
-        Database newDatabase = new Database(msg.sender);
-        if (databasesByOwner[msg.sender].length() == 0) {
-            databasesByOwner[msg.sender] = new AuxillaryListUint256();
+    function createDatabase(address owner_, address actor_) external {
+        Database newDatabase = new Database(owner_, actor_);
+        if (databasesByOwner[owner_].length() == 0) {
+            databasesByOwner[owner_] = new AuxillaryListUint256();
         }
 
-        databasesByOwner[msg.sender].add(databases.length);
+        databasesByOwner[owner_].add(databases.length);
         databases.push(address(newDatabase));
 
-        emit DatabaseCreated(msg.sender, address(newDatabase));
+        emit DatabaseCreated(owner_, address(newDatabase));
     }
 
     function getDatabaseIndicesByOwner(
