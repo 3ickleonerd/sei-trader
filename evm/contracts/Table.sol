@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "./AuxillaryList.sol";
+import "./AuxillaryListUint256.sol";
 
 contract Table {
     struct ColumnType {
@@ -10,7 +10,7 @@ contract Table {
     }
 
     ColumnType[] private _columnTypes;
-    AuxillaryList private _activeColumns;
+    AuxillaryListUint256 private _activeColumns;
 
     struct Value {
         uint256 columnIndex;
@@ -22,14 +22,17 @@ contract Table {
 
     address public database;
 
-    modifier onlyAuthorised() {
-        require(msg.sender == database, "Only the parent database can call this function");
+    modifier onlyDatabase() {
+        require(
+            msg.sender == database,
+            "Only the parent database can call this function"
+        );
         _;
     }
 
     constructor(ColumnType[] memory columnTypes_) {
         _columnTypes = columnTypes_;
-        _activeColumns = new AuxillaryList();
+        _activeColumns = new AuxillaryListUint256();
 
         database = msg.sender; //Expect to be deployed by a Database contract
 
@@ -38,11 +41,7 @@ contract Table {
         }
     }
 
-    function getActiveColumnTypes()
-        public
-        view
-        returns (ColumnType[] memory)
-    {
+    function getActiveColumnTypes() public view returns (ColumnType[] memory) {
         ColumnType[] memory activeColumnTypes = new ColumnType[](
             _activeColumns.length()
         );
@@ -62,7 +61,7 @@ contract Table {
         return activeColumnTypes;
     }
 
-    function typeCheck(Value value_){
+    function typeCheck(Value memory value_) public view {
         require(
             value_.columnIndex < _columnTypes.length,
             "Invalid column index"
@@ -83,7 +82,10 @@ contract Table {
             require(value_.value.length == 1, "Value must be a single byte");
         } else if (columnType.acceptedType == 4) {
             // ADDRESS
-            require(value_.value.length == 20, "Value must be a 20-byte address");
+            require(
+                value_.value.length == 20,
+                "Value must be a 20-byte address"
+            );
         } else if (columnType.acceptedType == 5) {
             // BLOB
             require(value_.value.length > 0, "Value cannot be empty");
@@ -92,9 +94,7 @@ contract Table {
         }
     }
 
-    function ensureActiveColumns(
-        uint256[] memory columnIndexes_
-    ) internal {
+    function ensureActiveColumns(uint256[] memory columnIndexes_) internal {
         for (uint256 i = 0; i < columnIndexes_.length; i++) {
             require(
                 columnIndexes_[i] < _columnTypes.length,
@@ -114,7 +114,7 @@ contract Table {
         }
     }
 
-    function insert(
+    function insertOne(
         uint256[] memory columnIndexes_,
         bytes[] memory values_
     ) public onlyDatabase {
@@ -141,13 +141,13 @@ contract Table {
             newRow[i] = Value(columnIndexes_[i], values_[i]);
         }
 
-        _values.push(newRow);
+        _rows.push(newRow);
     }
 
     function insertMany(
         uint256[][] memory columnIndexes_,
         bytes[][] memory values_
-    ) public  onlyDatabase {
+    ) public onlyDatabase {
         require(
             columnIndexes_.length == values_.length,
             "Column indexes and values length mismatch"
@@ -158,12 +158,12 @@ contract Table {
         );
 
         for (uint256 i = 0; i < columnIndexes_.length; i++) {
-            insert(columnIndexes_[i], values_[i]);
+            insertOne(columnIndexes_[i], values_[i]);
         }
     }
 
-    function delete(uint256 rowIndex_) public onlyDatabase {
-        require(rowIndex_ < _values.length, "Row index out of bounds");
+    function deleteOne(uint256 rowIndex_) public onlyDatabase {
+        require(rowIndex_ < _rows.length, "Row index out of bounds");
         require(!_deletedRows[rowIndex_], "Row already deleted");
 
         _deletedRows[rowIndex_] = true;
@@ -171,12 +171,16 @@ contract Table {
 
     function deleteMany(uint256[] memory rowIndexes_) public onlyDatabase {
         for (uint256 i = 0; i < rowIndexes_.length; i++) {
-            delete(rowIndexes_[i]);
+            deleteOne(rowIndexes_[i]);
         }
     }
 
-    function update(uint256 rowIndex_, uint256[] columnIndexes_, bytes[] values_) public onlyDatabase {
-        require(rowIndex_ < _values.length, "Row index out of bounds");
+    function updateOne(
+        uint256 rowIndex_,
+        uint256[] memory columnIndexes_,
+        bytes[] memory values_
+    ) public onlyDatabase {
+        require(rowIndex_ < _rows.length, "Row index out of bounds");
         require(!_deletedRows[rowIndex_], "Row already deleted");
         require(
             columnIndexes_.length == values_.length,
@@ -193,40 +197,38 @@ contract Table {
                 columnIndexes_[i] < _columnTypes.length,
                 "Invalid column index"
             );
-            
+
             typeCheck(Value(columnIndexes_[i], values_[i]));
 
-            _values[rowIndex_][columnIndexes_[i]].value = values_[i];
+            _rows[rowIndex_][columnIndexes_[i]].value = values_[i];
         }
     }
 
     function updateMany(
-        uint256[] rowIndexes_,
-        uint256[][] columnIndexes_,
-        bytes[][] values_
+        uint256[] memory rowIndexes_,
+        uint256[][] memory columnIndexes_,
+        bytes[][] memory values_
     ) public onlyDatabase {
         require(
             rowIndexes_.length == columnIndexes_.length &&
-            rowIndexes_.length == values_.length,
+                rowIndexes_.length == values_.length,
             "Row indexes, column indexes and values length mismatch"
         );
 
         for (uint256 i = 0; i < rowIndexes_.length; i++) {
-            update(rowIndexes_[i], columnIndexes_[i], values_[i]);
+            updateOne(rowIndexes_[i], columnIndexes_[i], values_[i]);
         }
     }
 
-    function readRow(
-        uint256 rowIndex_
-    ) public view returns (Value[] memory) {
-        require(rowIndex_ < _values.length, "Row index out of bounds");
+    function readRow(uint256 rowIndex_) public view returns (Value[] memory) {
+        require(rowIndex_ < _rows.length, "Row index out of bounds");
         require(!_deletedRows[rowIndex_], "Row already deleted");
 
         Value[] memory activeRow = new Value[](_activeColumns.length());
         uint256 activeIndex = 0;
-        for (uint256 i = 0; i < _values[rowIndex_].length; i++) {
+        for (uint256 i = 0; i < _rows[rowIndex_].length; i++) {
             if (_activeColumns.contains(i)) {
-                activeRow[activeIndex] = _values[rowIndex_][i];
+                activeRow[activeIndex] = _rows[rowIndex_][i];
                 activeIndex++;
             }
         }

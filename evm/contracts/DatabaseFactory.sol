@@ -5,7 +5,7 @@ import "./Database.sol";
 import "./AuxillaryListUint256.sol";
 
 contract DatabaseFactory {
-    mapping(address => AuxillaryList) public databasesByOwner;
+    mapping(address => AuxillaryListUint256) public databasesByOwner;
     address[] public databases;
 
     event DatabaseCreated(address indexed creator, address indexed dbAddress);
@@ -13,7 +13,7 @@ contract DatabaseFactory {
     function createDatabase() external {
         Database newDatabase = new Database(msg.sender);
         if (databasesByOwner[msg.sender].length() == 0) {
-            databasesByOwner[msg.sender] = new AuxillaryList();
+            databasesByOwner[msg.sender] = new AuxillaryListUint256();
         }
 
         databasesByOwner[msg.sender].add(databases.length);
