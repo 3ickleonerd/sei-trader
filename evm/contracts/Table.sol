@@ -22,7 +22,7 @@ contract Table {
 
     address public database;
 
-    modifier onlyDatabase() {
+    modifier onlyAuthorised() {
         require(msg.sender == database, "Only the parent database can call this function");
         _;
     }
