@@ -3,8 +3,8 @@ import "@nomicfoundation/hardhat-toolbox-viem";
 import path from "node:path";
 
 const config: HardhatUserConfig = {
-  solidity: {version:"0.8.28", 
-
+  solidity: {
+    version: "0.8.28",
     settings: {
       optimizer: {
         enabled: true,
@@ -19,7 +19,6 @@ const config: HardhatUserConfig = {
     cache: path.join(__dirname, "cache"),
     artifacts: path.join(__dirname, "artifacts"),
   },
-  
 };
 
 export default config;

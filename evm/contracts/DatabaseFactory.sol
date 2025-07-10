@@ -10,21 +10,16 @@ contract DatabaseFactory {
 
     event DatabaseCreated(address indexed creator, address indexed dbAddress);
 
-    function createDatabase() external {
-        require(
-            databasesByOwner[msg.sender].length() == 0,
-            "You already have a database"
-        );
+    function createDatabase(address owner_, address actor_) external {
+        Database newDatabase = new Database(owner_, actor_);
+        if (databasesByOwner[owner_].length() == 0) {
+            databasesByOwner[owner_] = new AuxillaryListUint256();
+        }
 
-        AuxillaryListUint256 newDatabase = new AuxillaryListUint256();
-        databasesByOwner[msg.sender] = newDatabase;
+        databasesByOwner[owner_].add(databases.length);
         databases.push(address(newDatabase));
 
-        emit DatabaseCreated(msg.sender, address(newDatabase));
-    }
-
-    function getDatabases() external view returns (address[] memory) {
-        return databases;
+        emit DatabaseCreated(owner_, address(newDatabase));
     }
 
     function getDatabaseIndicesByOwner(

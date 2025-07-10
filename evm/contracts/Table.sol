@@ -61,6 +61,30 @@ contract Table {
         return activeColumnTypes;
     }
 
+    function addColumnType(ColumnType memory columnType_) public onlyDatabase {
+        _columnTypes.push(columnType_);
+        _activeColumns.add(_columnTypes.length - 1);
+    }
+
+    function removeActiveColumn(uint256 columnIndex_) public onlyDatabase {
+        require(columnIndex_ < _columnTypes.length, "Invalid column index");
+        require(_activeColumns.contains(columnIndex_), "Column not active");
+
+        _activeColumns.remove(columnIndex_);
+
+        for (uint256 i = 0; i < _rows.length; i++) {
+            delete _rows[i][columnIndex_];
+        }
+    }
+
+    function renameColumnType(
+        uint256 columnIndex_,
+        string memory newName_
+    ) public onlyDatabase {
+        require(columnIndex_ < _columnTypes.length, "Invalid column index");
+        _columnTypes[columnIndex_].name = newName_;
+    }
+
     function typeCheck(Value memory value_) public view {
         require(
             value_.columnIndex < _columnTypes.length,
