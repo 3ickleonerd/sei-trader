@@ -14,11 +14,7 @@ describe("Table", function () {
       { name: "owner", acceptedType: 4 }, // ADDRESS
     ];
 
-    const encodedColumns = columnTypes.map((col) => [
-      col.name,
-      col.acceptedType,
-    ]);
-    const table = await hre.viem.deployContract("Table", [encodedColumns]);
+    const table = await hre.viem.deployContract("Table", [columnTypes]);
     const publicClient = await hre.viem.getPublicClient();
 
     return { table, deployer, acc1, columnTypes, publicClient };
@@ -180,7 +176,6 @@ describe("Table", function () {
 
     const row = await table.read.readRow([0n]);
 
-    // ✅ Use decodePacked instead of decodeAbiParameters
    const decodedBool = row[1].value === "0x01";
     expect(decodedBool).to.eq(false);
   });
