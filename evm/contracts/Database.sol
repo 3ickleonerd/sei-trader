@@ -5,11 +5,13 @@ import "./AuxillaryListUint256.sol";
 import "./Table.sol";
 
 contract Database {
-    address private _owner;
     address private _actor; // Actor is the address that we assign as account to owner
 
     address[] private _tables;
     string[] private _tableNames;
+
+    string public name;
+    address public owner;
 
     event TableCreated(address indexed tableAddress, string tableName);
     event TableDropped(address indexed tableAddress, string tableName);
@@ -19,16 +21,15 @@ contract Database {
         string newName
     );
 
-    constructor(address owner_, address actor_) {
-        _owner = owner_;
+    constructor(address owner_, address actor_, string memory name_) {
         _actor = actor_;
+
+        owner = owner_;
+        name = name_;
     }
 
     modifier permitted() {
-        require(
-            msg.sender == _owner || msg.sender == _actor,
-            "Not allowed to call this function"
-        );
+        require(msg.sender == _actor, "Not allowed to call this function");
         _;
     }
 
