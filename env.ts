@@ -1,4 +1,4 @@
-const envKeys = ["NODE_ENV"] as const;
+const envKeys = ["NODE_ENV", "SERVER_PRIVATE_KEY"] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;
 
