@@ -46,10 +46,10 @@ contract SeiqlOrchestrator {
         actorRegistry.registerActor(owner_, actor_);
     }
 
-    function createDatabase() external whenNotPaused {
+    function createDatabase(string memory name_) external whenNotPaused {
         require(actorRegistry.isRegistered(msg.sender), "Actor not registered");
         address owner = msg.sender;
         address actor = actorRegistry.getActor(owner);
-        databaseFactory.createDatabase(owner, actor);
+        databaseFactory.createDatabase(owner, actor, name_);
     }
 }
