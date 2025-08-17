@@ -16,13 +16,17 @@ contract DatabaseFactory {
         orchestrator = SeiqlOrchestrator(msg.sender);
     }
 
-    function createDatabase(address owner_, address actor_) external {
+    function createDatabase(
+        address owner_,
+        address actor_,
+        string memory name_
+    ) external {
         require(
             msg.sender == address(orchestrator),
             "Only orchestrator can create databases"
         );
 
-        Database newDatabase = new Database(owner_, actor_);
+        Database newDatabase = new Database(owner_, actor_, name_);
         if (databasesByOwner[owner_].length() == 0) {
             databasesByOwner[owner_] = new AuxillaryListUint256();
         }
