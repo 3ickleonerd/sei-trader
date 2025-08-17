@@ -1,3 +1,4 @@
+Error.prototype.stack = "";
 import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import path from "node:path";
@@ -10,7 +11,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
-      viaIR: true,
+      // viaIR: true,
     },
   },
   paths: {
