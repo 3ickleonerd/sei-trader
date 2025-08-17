@@ -12,6 +12,12 @@ contract Database {
     string[] private _tableNames;
 
     event TableCreated(address indexed tableAddress, string tableName);
+    event TableDropped(address indexed tableAddress, string tableName);
+    event TableRenamed(
+        address indexed tableAddress,
+        string oldName,
+        string newName
+    );
 
     constructor(address owner_, address actor_) {
         _owner = owner_;
@@ -27,14 +33,26 @@ contract Database {
     }
 
     function createTable(
-        Table.ColumnType[] memory columnTypes_,
+        string[] memory columnNames_,
+        uint8[] memory acceptedTypes_,
         string memory tableName_
-    ) external permitted {
-        Table newTable = new Table(columnTypes_);
+    ) external permitted returns (address) {
+        require(
+            columnNames_.length == acceptedTypes_.length,
+            "Column names and types length mismatch"
+        );
+        require(
+            columnNames_.length > 0,
+            "At least one column name and type must be provided"
+        );
+
+        Table newTable = new Table(columnNames_, acceptedTypes_);
         _tables.push(address(newTable));
         _tableNames.push(tableName_);
 
         emit TableCreated(address(newTable), tableName_);
+
+        return address(newTable);
     }
 
     function dropTable(uint256 index_) external permitted {
@@ -51,7 +69,7 @@ contract Database {
         _tables.pop();
         _tableNames.pop();
 
-        emit TableCreated(tableAddress, "");
+        emit TableDropped(tableAddress, _tableNames[index_]);
     }
 
     function renameTable(
@@ -59,6 +77,9 @@ contract Database {
         string memory newName_
     ) external permitted {
         require(index_ < _tableNames.length, "Index out of bounds");
+
+        emit TableRenamed(_tables[index_], _tableNames[index_], newName_);
+
         _tableNames[index_] = newName_;
     }
 

@@ -14,7 +14,7 @@ contract Table {
 
     struct Value {
         uint256 columnIndex;
-        bytes value;
+        bytes data;
     }
 
     Value[][] private _rows;
@@ -30,13 +30,31 @@ contract Table {
         _;
     }
 
-    constructor(ColumnType[] memory columnTypes_) {
-        _columnTypes = columnTypes_;
+    constructor(string[] memory columnNames_, uint8[] memory acceptedTypes_) {
+        require(
+            columnNames_.length == acceptedTypes_.length,
+            "Column names and types length mismatch"
+        );
+        require(
+            columnNames_.length > 0,
+            "At least one column name and type must be provided"
+        );
+
         _activeColumns = new AuxillaryListUint256();
 
         database = msg.sender; //Expect to be deployed by a Database contract
 
-        for (uint256 i = 0; i < columnTypes_.length; i++) {
+        for (uint256 i = 0; i < columnNames_.length; i++) {
+            require(
+                bytes(columnNames_[i]).length > 0,
+                "Column name cannot be empty"
+            );
+            require(
+                acceptedTypes_[i] <= 5,
+                "Invalid accepted type, must be between 0 and 5"
+            );
+
+            _columnTypes.push(ColumnType(columnNames_[i], acceptedTypes_[i]));
             _activeColumns.add(i);
         }
     }
@@ -61,9 +79,36 @@ contract Table {
         return activeColumnTypes;
     }
 
-    function addColumnType(ColumnType memory columnType_) public onlyDatabase {
-        _columnTypes.push(columnType_);
+    function addColumnType(
+        string memory name_,
+        uint8 acceptedType_
+    ) public onlyDatabase {
+        require(bytes(name_).length > 0, "Column name cannot be empty");
+        require(
+            acceptedType_ <= 5,
+            "Invalid accepted type, must be between 0 and 5"
+        );
+
+        _columnTypes.push(ColumnType(name_, acceptedType_));
         _activeColumns.add(_columnTypes.length - 1);
+    }
+
+    function addColumnTypes(
+        string[] memory names_,
+        uint8[] memory acceptedTypes_
+    ) public onlyDatabase {
+        require(
+            names_.length == acceptedTypes_.length,
+            "Column names and types length mismatch"
+        );
+        require(
+            names_.length > 0,
+            "At least one column name and type must be provided"
+        );
+
+        for (uint256 i = 0; i < names_.length; i++) {
+            addColumnType(names_[i], acceptedTypes_[i]);
+        }
     }
 
     function removeActiveColumn(uint256 columnIndex_) public onlyDatabase {
@@ -85,34 +130,28 @@ contract Table {
         _columnTypes[columnIndex_].name = newName_;
     }
 
-    function typeCheck(Value memory value_) public view {
-        require(
-            value_.columnIndex < _columnTypes.length,
-            "Invalid column index"
-        );
-        ColumnType memory columnType = _columnTypes[value_.columnIndex];
+    function typeCheck(uint256 columnIndex_, bytes memory data_) public view {
+        require(columnIndex_ < _columnTypes.length, "Invalid column index");
+        ColumnType memory columnType = _columnTypes[columnIndex_];
 
         if (columnType.acceptedType == 0) {
             // INTEGER
-            require(value_.value.length > 0, "Value cannot be empty");
+            require(data_.length > 0, "data cannot be empty");
         } else if (columnType.acceptedType == 1) {
             // FLOAT
-            require(value_.value.length > 0, "Value cannot be empty");
+            require(data_.length > 0, "data cannot be empty");
         } else if (columnType.acceptedType == 2) {
             // TEXT
-            require(value_.value.length > 0, "Value cannot be empty");
+            require(data_.length > 0, "data cannot be empty");
         } else if (columnType.acceptedType == 3) {
             // BOOL
-            require(value_.value.length == 1, "Value must be a single byte");
+            require(data_.length == 1, "data must be a single byte");
         } else if (columnType.acceptedType == 4) {
             // ADDRESS
-            require(
-                value_.value.length == 20,
-                "Value must be a 20-byte address"
-            );
+            require(data_.length == 20, "data must be a 20-byte address");
         } else if (columnType.acceptedType == 5) {
             // BLOB
-            require(value_.value.length > 0, "Value cannot be empty");
+            require(data_.length > 0, "data cannot be empty");
         } else {
             revert("Unsupported column type");
         }
@@ -160,12 +199,16 @@ contract Table {
                 "Invalid column index"
             );
 
-            typeCheck(Value(columnIndexes_[i], values_[i]));
+            typeCheck(columnIndexes_[i], values_[i]);
 
             newRow[i] = Value(columnIndexes_[i], values_[i]);
         }
 
-        _rows.push(newRow);
+        _rows.push();
+        Value[] storage rowStorage = _rows[_rows.length - 1];
+        for (uint256 i = 0; i < newRow.length; i++) {
+            rowStorage.push(newRow[i]);
+        }
     }
 
     function insertMany(
@@ -222,9 +265,9 @@ contract Table {
                 "Invalid column index"
             );
 
-            typeCheck(Value(columnIndexes_[i], values_[i]));
+            typeCheck(columnIndexes_[i], values_[i]);
 
-            _rows[rowIndex_][columnIndexes_[i]].value = values_[i];
+            _rows[rowIndex_][columnIndexes_[i]].data = values_[i];
         }
     }
 
