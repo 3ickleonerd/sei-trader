@@ -1,42 +1,40 @@
 import { Database } from "bun:sqlite";
-
 import { execute } from "./engine";
+import { contracts, evmClient } from "./evm";
 
-// Test all custom types
-execute({
-  name: "test_db",
-  owner: "0x1234567890abcdef1234567890abcdef12345678",
-  query:
-    "CREATE TABLE accounts (id INTEGER PRIMARY KEY, wallet ADDRESS, is_active BOOL, balance FLOAT, created_at INTEGER);",
+try {
+  await contracts
+    .seiqlOrchestrator()
+    .write.registerActor([
+      evmClient.account.address,
+      evmClient.account.address,
+    ]);
+} catch (_) {}
+
+try {
+  await contracts.seiqlOrchestrator().write.createDatabase(["test_db"]);
+} catch (_) {}
+
+await fetch("http://localhost:3040/db", {
+  method: "POST",
 });
 
-// const db = new Database();
-// db.exec(`
-//   CREATE TABLE IF NOT EXISTS users (
-//     id INTEGER PRIMARY KEY,
-//     name TEXT,
-//     age INTEGER
-//   );
-// `);
+try {
+  await execute({
+    name: "test_db",
+    owner: evmClient.account.address,
+    query: `CREATE TABLE IF NOT EXISTS accounts (
+              id INTEGER PRIMARY KEY,
+              wallet ADDRESS,
+              is_active BOOL,
+              balance INTEGER
+            );`,
+  });
+} catch (_) {}
 
-// db.exec(`INSERT INTO users (name, age) VALUES ('Alice', 30);`);
-// db.exec(`INSERT INTO users (name, age) VALUES ('Bob', 25);`);
-// db.exec(`INSERT INTO users (name, age) VALUES ('Charlie', 35);`);
-// db.exec(`INSERT INTO users (name, age) VALUES ('Diana', 28);`);
-
-// const old = db.serialize();
-
-// const res = db
-//   .query(
-//     `
-//   CREATE TABLE IF NOT EXISTS users (
-//     id INTEGER PRIMARY KEY,
-//     name TEXT,
-//     age INTEGER
-//   );`
-//   )
-//   .all();
-
-// console.log("Result:", res);
-
-// console.log(Database.deserialize(old).query(`SELECT * FROM users;`).all());
+await execute({
+  name: "test_db",
+  owner: evmClient.account.address,
+  query: `INSERT INTO accounts (wallet, is_active, balance)
+          VALUES ("0xc37cB62C6Ad31842D8ba5c748f972d63C3f60569", false, 0);`,
+});

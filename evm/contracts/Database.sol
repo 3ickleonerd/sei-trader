@@ -87,4 +87,82 @@ contract Database {
     function tableNames() external view returns (string[] memory) {
         return _tableNames;
     }
+
+    function tableAddresses() external view returns (address[] memory) {
+        return _tables;
+    }
+
+    function getTable(
+        string memory tableName_
+    ) external view returns (address) {
+        return _getTableAddress(tableName_);
+    }
+
+    function _getTableAddress(
+        string memory tableName_
+    ) internal view returns (address) {
+        for (uint256 i = 0; i < _tableNames.length; i++) {
+            if (
+                keccak256(bytes(_tableNames[i])) == keccak256(bytes(tableName_))
+            ) {
+                return _tables[i];
+            }
+        }
+        revert("Table not found");
+    }
+
+    // Proxy functions to call table operations
+    function insertOne(
+        string memory tableName_,
+        uint256[] memory columnIndexes_,
+        bytes[] memory values_
+    ) external permitted {
+        address tableAddress = _getTableAddress(tableName_);
+        Table(tableAddress).insertOne(columnIndexes_, values_);
+    }
+
+    function insertMany(
+        string memory tableName_,
+        uint256[][] memory columnIndexes_,
+        bytes[][] memory values_
+    ) external permitted {
+        address tableAddress = _getTableAddress(tableName_);
+        Table(tableAddress).insertMany(columnIndexes_, values_);
+    }
+
+    function deleteOne(
+        string memory tableName_,
+        uint256 rowIndex_
+    ) external permitted {
+        address tableAddress = _getTableAddress(tableName_);
+        Table(tableAddress).deleteOne(rowIndex_);
+    }
+
+    function deleteMany(
+        string memory tableName_,
+        uint256[] memory rowIndexes_
+    ) external permitted {
+        address tableAddress = _getTableAddress(tableName_);
+        Table(tableAddress).deleteMany(rowIndexes_);
+    }
+
+    function updateOne(
+        string memory tableName_,
+        uint256 rowIndex_,
+        uint256[] memory columnIndexes_,
+        bytes[] memory values_
+    ) external permitted {
+        address tableAddress = _getTableAddress(tableName_);
+        Table(tableAddress).updateOne(rowIndex_, columnIndexes_, values_);
+    }
+
+    function updateMany(
+        string memory tableName_,
+        uint256[] memory rowIndexes_,
+        uint256[][] memory columnIndexes_,
+        bytes[][] memory values_
+    ) external permitted {
+        address tableAddress = _getTableAddress(tableName_);
+        Table(tableAddress).updateMany(rowIndexes_, columnIndexes_, values_);
+    }
 }

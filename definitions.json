@@ -104,7 +104,7 @@
         "type": "function"
       }
     ],
-    "address": "0x7ef8e99980da5bcedcf7c10f41e55f759f6a174b"
+    "address": "0x8476fc408b2df4d03e9705fc2768d9179b62800c"
   },
   "DatabaseFactory": {
     "abi": [
@@ -293,7 +293,7 @@
         "type": "function"
       }
     ],
-    "address": "0x61Ab51bE7C866a54B0B442c149d7715367743EfD"
+    "address": "0x52981ec17B0fD3C9D38503248DAFA0057E94dAcf"
   },
   "ActorRegistry": {
     "abi": [
@@ -373,7 +373,7 @@
         "type": "function"
       }
     ],
-    "address": "0x59D59097E71b2cfD5D2dA470843033dbd94BE4Ef"
+    "address": "0xf18381695090a29c8Dc52bcE5696E272214e1666"
   },
   "Database": {
     "abi": [
@@ -493,12 +493,113 @@
       {
         "inputs": [
           {
+            "internalType": "string",
+            "name": "tableName_",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "rowIndexes_",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "deleteMany",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "tableName_",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rowIndex_",
+            "type": "uint256"
+          }
+        ],
+        "name": "deleteOne",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
             "internalType": "uint256",
             "name": "index_",
             "type": "uint256"
           }
         ],
         "name": "dropTable",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "tableName_",
+            "type": "string"
+          }
+        ],
+        "name": "getTable",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "tableName_",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256[][]",
+            "name": "columnIndexes_",
+            "type": "uint256[][]"
+          },
+          {
+            "internalType": "bytes[][]",
+            "name": "values_",
+            "type": "bytes[][]"
+          }
+        ],
+        "name": "insertMany",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "tableName_",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "columnIndexes_",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "bytes[]",
+            "name": "values_",
+            "type": "bytes[]"
+          }
+        ],
+        "name": "insertOne",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -549,6 +650,19 @@
       },
       {
         "inputs": [],
+        "name": "tableAddresses",
+        "outputs": [
+          {
+            "internalType": "address[]",
+            "name": "",
+            "type": "address[]"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
         "name": "tableNames",
         "outputs": [
           {
@@ -558,6 +672,62 @@
           }
         ],
         "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "tableName_",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "rowIndexes_",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[][]",
+            "name": "columnIndexes_",
+            "type": "uint256[][]"
+          },
+          {
+            "internalType": "bytes[][]",
+            "name": "values_",
+            "type": "bytes[][]"
+          }
+        ],
+        "name": "updateMany",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "tableName_",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rowIndex_",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "columnIndexes_",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "bytes[]",
+            "name": "values_",
+            "type": "bytes[]"
+          }
+        ],
+        "name": "updateOne",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
       }
     ]
