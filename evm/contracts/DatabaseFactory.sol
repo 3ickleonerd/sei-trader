@@ -7,6 +7,7 @@ import "./SeiqlOrchestrator.sol";
 
 contract DatabaseFactory {
     mapping(address => AuxillaryListUint256) public databasesByOwner;
+    mapping(address => mapping(bytes32 => bool)) public nameHashExists;
     address[] public databases;
     SeiqlOrchestrator orchestrator;
 
@@ -26,13 +27,20 @@ contract DatabaseFactory {
             "Only orchestrator can create databases"
         );
 
+        bytes32 nameHash = keccak256(abi.encodePacked(name_));
+        require(
+            !nameHashExists[owner_][nameHash],
+            "Database name already exists for this owner"
+        );
+
         Database newDatabase = new Database(owner_, actor_, name_);
-        if (databasesByOwner[owner_].length() == 0) {
+        if (address(databasesByOwner[owner_]) == address(0)) {
             databasesByOwner[owner_] = new AuxillaryListUint256();
         }
 
         databasesByOwner[owner_].add(databases.length);
         databases.push(address(newDatabase));
+        nameHashExists[owner_][nameHash] = true;
 
         emit DatabaseCreated(owner_, address(newDatabase));
     }
@@ -51,5 +59,13 @@ contract DatabaseFactory {
         require(index_ < databases.length, "Index out of bounds");
 
         return databases[index_];
+    }
+
+    function isDatabaseNameTaken(
+        address owner_,
+        string memory name_
+    ) external view returns (bool) {
+        bytes32 nameHash = keccak256(abi.encodePacked(name_));
+        return nameHashExists[owner_][nameHash];
     }
 }
