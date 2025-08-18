@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "node-sql-parser": "^5.3.10",
-    "viem": "^2.31.6",
+    "viem": "^2.33.3",
     "zod": "^3.25.67"
   },
   "workspaces": [

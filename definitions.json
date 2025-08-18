@@ -1,5 +1,5 @@
 {
-  "CaretOrchestrator": {
+  "SeiqlOrchestrator": {
     "abi": [
       {
         "inputs": [],
@@ -20,7 +20,13 @@
         "type": "function"
       },
       {
-        "inputs": [],
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "name_",
+            "type": "string"
+          }
+        ],
         "name": "createDatabase",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -34,6 +40,26 @@
             "internalType": "contract DatabaseFactory",
             "name": "",
             "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "pause",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "paused",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
           }
         ],
         "stateMutability": "view",
@@ -69,12 +95,24 @@
         ],
         "stateMutability": "view",
         "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "unpause",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
       }
     ],
     "address": "0x7ef8e99980da5bcedcf7c10f41e55f759f6a174b"
   },
   "DatabaseFactory": {
     "abi": [
+      {
+        "inputs": [],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
       {
         "anonymous": false,
         "inputs": [
@@ -105,6 +143,11 @@
             "internalType": "address",
             "name": "actor_",
             "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "name_",
+            "type": "string"
           }
         ],
         "name": "createDatabase",
@@ -151,6 +194,19 @@
         "type": "function"
       },
       {
+        "inputs": [],
+        "name": "databasesCount",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
         "inputs": [
           {
             "internalType": "uint256",
@@ -183,6 +239,54 @@
             "internalType": "uint256[]",
             "name": "",
             "type": "uint256[]"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "owner_",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "name_",
+            "type": "string"
+          }
+        ],
+        "name": "isDatabaseNameTaken",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "name": "nameHashExists",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
           }
         ],
         "stateMutability": "view",
@@ -284,6 +388,11 @@
             "internalType": "address",
             "name": "actor_",
             "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "name_",
+            "type": "string"
           }
         ],
         "stateMutability": "nonpayable",
@@ -306,6 +415,50 @@
           }
         ],
         "name": "TableCreated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "tableAddress",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "string",
+            "name": "tableName",
+            "type": "string"
+          }
+        ],
+        "name": "TableDropped",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "tableAddress",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "string",
+            "name": "oldName",
+            "type": "string"
+          },
+          {
+            "indexed": false,
+            "internalType": "string",
+            "name": "newName",
+            "type": "string"
+          }
+        ],
+        "name": "TableRenamed",
         "type": "event"
       },
       {
@@ -348,6 +501,32 @@
         "name": "dropTable",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "name",
+        "outputs": [
+          {
+            "internalType": "string",
+            "name": "",
+            "type": "string"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
         "type": "function"
       },
       {
