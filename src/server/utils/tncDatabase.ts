@@ -22,7 +22,7 @@ export function insertTncAcceptance(record: TncAcceptanceRecord): void {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
-  stmt.run([
+  stmt.run(
     record.telegram_id || null,
     record.telegram_username || null,
     record.tnc_version,
@@ -32,7 +32,7 @@ export function insertTncAcceptance(record: TncAcceptanceRecord): void {
     record.ip_address || null,
     record.device || null,
     record.slug || null
-  ]);
+  );
 }
 
 export function getTncAcceptanceByTelegramId(telegramId: number): TncAcceptanceRecord[] {
@@ -42,7 +42,7 @@ export function getTncAcceptanceByTelegramId(telegramId: number): TncAcceptanceR
     ORDER BY accepted_at DESC
   `);
   
-  return stmt.all([telegramId]) as TncAcceptanceRecord[];
+  return stmt.all(telegramId) as TncAcceptanceRecord[];
 }
 
 export function getTncAcceptanceBySlug(slug: string): TncAcceptanceRecord | null {
@@ -53,7 +53,7 @@ export function getTncAcceptanceBySlug(slug: string): TncAcceptanceRecord | null
     LIMIT 1
   `);
   
-  return stmt.get([slug]) as TncAcceptanceRecord | null;
+  return stmt.get(slug) as TncAcceptanceRecord | null;
 }
 
 export function hasAcceptedLatestTnc(telegramId: number, currentVersion: string): boolean {
@@ -62,6 +62,6 @@ export function hasAcceptedLatestTnc(telegramId: number, currentVersion: string)
     WHERE telegram_id = ? AND tnc_version = ?
   `);
   
-  const result = stmt.get([telegramId, currentVersion]) as { count: number };
+  const result = stmt.get(telegramId, currentVersion) as { count: number };
   return result.count > 0;
 }
