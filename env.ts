@@ -3,6 +3,7 @@ const envKeys = [
   "CG_API_KEY",
   "TG_BOT_TOKEN",
   "DB_PATH",
+  "PORT",
 ] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;

@@ -1,7 +1,8 @@
 {
   "scripts": {
     "db:generate": "bun run data/migrations/generate.ts",
-    "db:migrate": "bun run data/migrations/migrate.ts"
+    "db:migrate": "bun run data/migrations/migrate.ts",
+    "server:dev": "bun run src/server/index.ts"
   },
   "dependencies": {
     "@google/genai": "^1.14.0",
