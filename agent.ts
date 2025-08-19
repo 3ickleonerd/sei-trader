@@ -1,5 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
-import { getPriceHistory } from "./coingecko";
+import {
+  getPriceHistory,
+  getAllCachedPriceHistories,
+  warmEssentialCache,
+  getMarketSummary,
+} from "./coingecko";
 import { tokens } from "./tokens";
 import { z } from "zod";
 
@@ -18,7 +23,6 @@ type AgentConfig = Omit<
 >;
 type ModelName = "gemini-2.0-flash";
 
-// Zod schemas for type safety
 const PromptGuardResultSchema = z.object({
   valid: z.boolean(),
   reason: z.string().optional(),
@@ -39,10 +43,25 @@ const TradeDecisionSchema = z.object({
   confidence: z.number().min(0).max(100),
 });
 
-// TypeScript types inferred from Zod schemas
+const ContextRequestSchema = z.object({
+  needsMoreContext: z.boolean(),
+  requestedTokens: z.array(z.string()).optional(),
+  requestedDays: z.number().optional(),
+  reason: z.string().optional(),
+});
+
+const GenericAdviceSchema = z.object({
+  suggestedToken: z.string().optional(),
+  reasoning: z.string(),
+  needsSpecificTokenData: z.boolean(),
+  requestedTokens: z.array(z.string()).optional(),
+});
+
 type PromptGuardResult = z.infer<typeof PromptGuardResultSchema>;
 type TokenExtractionResult = z.infer<typeof TokenExtractionResultSchema>;
 type TradeDecision = z.infer<typeof TradeDecisionSchema>;
+type ContextRequest = z.infer<typeof ContextRequestSchema>;
+type GenericAdvice = z.infer<typeof GenericAdviceSchema>;
 
 export class Agent {
   preamble: string;
@@ -60,16 +79,12 @@ export class Agent {
     });
   }
 
-  /**
-   * Safely validate and return parsed result with Zod
-   */
   private safeParseWithZod<T>(data: any, schema: z.ZodSchema<T>): T {
     try {
       return schema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.warn("Zod validation failed:", error.issues);
-        // You could implement fallback logic here
         throw new Error(
           `Validation failed: ${error.issues.map((e) => e.message).join(", ")}`
         );
@@ -95,7 +110,6 @@ export class Agent {
       }
       const json = JSON.parse(jsonText);
 
-      // Validate with Zod schema if provided
       if (schema) {
         return this.safeParseWithZod(json, schema);
       }
@@ -105,9 +119,6 @@ export class Agent {
 
     return res.candidates?.[0].content;
   }
-  /**
-   * Step 1: Prompt Guard - Validates if the prompt is appropriate for trading
-   */
   async promptGuard(userPrompt: string): Promise<PromptGuardResult> {
     const guardAgent = new Agent({
       model: "gemini-2.0-flash",
@@ -142,9 +153,6 @@ export class Agent {
     return result as PromptGuardResult;
   }
 
-  /**
-   * Step 2: Extract ticker from user prompt
-   */
   async extractTicker(userPrompt: string): Promise<TokenExtractionResult> {
     const tickerAgent = new Agent({
       model: "gemini-2.0-flash",
@@ -175,9 +183,6 @@ export class Agent {
     return result as TokenExtractionResult;
   }
 
-  /**
-   * Step 3-4: Analyze price history and make trade decision
-   */
   async makeTradeDecision(
     userPrompt: string,
     ticker: string,
@@ -249,7 +254,6 @@ export class Agent {
     error?: string;
   }> {
     try {
-      // Step 1: Prompt Guard
       console.log("🛡️ Running prompt guard...");
       const guardResult = await this.promptGuard(userPrompt);
 
@@ -260,7 +264,6 @@ export class Agent {
         };
       }
 
-      // Step 2: Extract ticker
       console.log("🎯 Extracting ticker...");
       const tickerResult = await this.extractTicker(userPrompt);
 
@@ -272,7 +275,6 @@ export class Agent {
         };
       }
 
-      // Step 3: Get price history
       console.log(`📈 Fetching price history for ${tickerResult.ticker}...`);
       const priceHistory = await getPriceHistory(tickerResult.ticker, 7);
 
@@ -285,7 +287,6 @@ export class Agent {
         };
       }
 
-      // Step 4: Make trade decision
       console.log("🤖 Analyzing and making trade decision...");
       const tradeDecision = await this.makeTradeDecision(
         userPrompt,
@@ -331,11 +332,7 @@ export class Agent {
     return contents.join("\n");
   }
 
-  /**
-   * Helper method to convert Zod schema to JSON schema for AI model
-   */
   private zodToJsonSchema(schema: z.ZodSchema): any {
-    // This is a simplified conversion - for production use a library like zod-to-json-schema
     if (schema instanceof z.ZodObject) {
       const shape = schema.shape;
       const properties: any = {};
@@ -349,7 +346,6 @@ export class Agent {
         } else if (value instanceof z.ZodBoolean) {
           properties[key] = { type: "boolean" };
         } else if (value instanceof z.ZodOptional) {
-          // Handle optional fields
           const innerType = value._def.innerType;
           if (innerType instanceof z.ZodString) {
             properties[key] = { type: "string" };
@@ -359,11 +355,9 @@ export class Agent {
             properties[key] = { type: "boolean" };
           }
         } else {
-          // Default to string for unknown types
           properties[key] = { type: "string" };
         }
 
-        // Add to required if not optional
         if (!(value instanceof z.ZodOptional)) {
           required.push(key);
         }
@@ -377,5 +371,287 @@ export class Agent {
     }
 
     return { type: "object" };
+  }
+
+  /**
+   * Enhanced workflow that handles generic trading advice and context requests
+   */
+  async enhancedWorkflow(userPrompt: string): Promise<{
+    guardResult: PromptGuardResult;
+    tickerResult?: TokenExtractionResult;
+    priceHistory?: any;
+    tradeDecision?: TradeDecision;
+    genericAdvice?: GenericAdvice;
+    contextRequest?: ContextRequest;
+    marketSummary?: any;
+    error?: string;
+  }> {
+    try {
+      console.log("🛡️ Running prompt guard...");
+      const guardResult = await this.promptGuard(userPrompt);
+
+      if (!guardResult.valid) {
+        return {
+          guardResult,
+          error: guardResult.reason || "Prompt validation failed",
+        };
+      }
+
+      console.log("🎯 Extracting ticker...");
+      const tickerResult = await this.extractTicker(userPrompt);
+
+      if (!tickerResult.found) {
+        console.log(
+          "🤔 No specific ticker found, providing generic trading advice..."
+        );
+
+        const cachedData = getAllCachedPriceHistories();
+        const marketSummary = getMarketSummary();
+
+        if (marketSummary.cachedTokens < 3) {
+          console.log(
+            "📊 Limited cached data available, warming essential cache..."
+          );
+          await warmEssentialCache();
+        }
+
+        const genericAdvice = await this.provideGenericAdvice(
+          userPrompt,
+          cachedData,
+          marketSummary
+        );
+
+        return {
+          guardResult,
+          tickerResult,
+          genericAdvice,
+          marketSummary,
+        };
+      }
+
+      console.log(`📈 Fetching price history for ${tickerResult.ticker}...`);
+      const priceHistory = await getPriceHistory(tickerResult.ticker, 7);
+
+      if (!priceHistory.success) {
+        return {
+          guardResult,
+          tickerResult,
+          priceHistory,
+          error: `Failed to fetch price history: ${priceHistory.error}`,
+        };
+      }
+
+      console.log("🧠 Checking if more context is needed...");
+      const contextRequest = await this.checkForContextNeeds(
+        userPrompt,
+        tickerResult.ticker,
+        priceHistory
+      );
+
+      if (contextRequest.needsMoreContext && contextRequest.requestedTokens) {
+        console.log(
+          `📊 AI requested additional data for: ${contextRequest.requestedTokens.join(
+            ", "
+          )}`
+        );
+
+        const additionalData: { [key: string]: any } = {};
+        for (const requestedToken of contextRequest.requestedTokens) {
+          const additionalHistory = await getPriceHistory(
+            requestedToken,
+            contextRequest.requestedDays || 7
+          );
+          if (additionalHistory.success) {
+            additionalData[requestedToken] = additionalHistory;
+          }
+        }
+
+        const tradeDecision = await this.makeTradeDecisionWithContext(
+          userPrompt,
+          tickerResult.ticker,
+          priceHistory,
+          additionalData
+        );
+
+        return {
+          guardResult,
+          tickerResult,
+          priceHistory,
+          tradeDecision,
+          contextRequest,
+        };
+      }
+
+      console.log("🤖 Analyzing and making trade decision...");
+      const tradeDecision = await this.makeTradeDecision(
+        userPrompt,
+        tickerResult.ticker,
+        priceHistory
+      );
+
+      return {
+        guardResult,
+        tickerResult,
+        priceHistory,
+        tradeDecision,
+      };
+    } catch (error) {
+      return {
+        guardResult: { valid: false, reason: "System error occurred" },
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  }
+
+  async provideGenericAdvice(
+    userPrompt: string,
+    cachedData: { [symbol: string]: any },
+    marketSummary: any
+  ): Promise<GenericAdvice> {
+    const adviceAgent = new Agent({
+      model: "gemini-2.0-flash",
+      preamble: `You are an expert cryptocurrency trading analyst providing general trading advice.
+      
+      The user has asked for trading advice without specifying a particular token.
+      
+      Based on the current market data and user's request, provide:
+      1. General market insights
+      2. Suggest a specific token to trade (if appropriate)
+      3. Reasoning for your suggestion
+      4. Whether you need specific token price data to make a better recommendation
+      
+      Available tokens: ${tokens.map((t) => t.symbol).join(", ")}
+      
+      If you suggest a token, make sure it's from the available list.`,
+    });
+
+    adviceAgent.knowledges.push(
+      `Market Summary:\n${JSON.stringify(marketSummary, null, 2)}`
+    );
+
+    if (Object.keys(cachedData).length > 0) {
+      adviceAgent.knowledges.push(
+        `Cached Price Data:\n${JSON.stringify(cachedData, null, 2)}`
+      );
+    }
+
+    adviceAgent.responseJsonSchema = {
+      type: "object",
+      properties: {
+        suggestedToken: { type: "string" },
+        reasoning: { type: "string" },
+        needsSpecificTokenData: { type: "boolean" },
+        requestedTokens: { type: "array", items: { type: "string" } },
+      },
+      required: ["reasoning", "needsSpecificTokenData"],
+    };
+
+    return await adviceAgent.prompt(userPrompt, GenericAdviceSchema);
+  }
+
+  async checkForContextNeeds(
+    userPrompt: string,
+    ticker: string,
+    priceHistory: any
+  ): Promise<ContextRequest> {
+    const contextAgent = new Agent({
+      model: "gemini-2.0-flash",
+      preamble: `You are an expert cryptocurrency analyst reviewing if additional market data is needed.
+      
+      Given the user prompt, target token, and its price history, determine if you need additional context such as:
+      - Price data from other tokens for comparison
+      - Longer historical data
+      - Market correlation data
+      
+      Be specific about what additional data would help make a better trading decision.
+      Available tokens: ${tokens.map((t) => t.symbol).join(", ")}`,
+    });
+
+    contextAgent.knowledges.push(`Target Token: ${ticker}`);
+    contextAgent.knowledges.push(
+      `Price History for ${ticker}:\n${JSON.stringify(priceHistory, null, 2)}`
+    );
+
+    contextAgent.responseJsonSchema = {
+      type: "object",
+      properties: {
+        needsMoreContext: { type: "boolean" },
+        requestedTokens: { type: "array", items: { type: "string" } },
+        requestedDays: { type: "number" },
+        reason: { type: "string" },
+      },
+      required: ["needsMoreContext"],
+    };
+
+    return await contextAgent.prompt(userPrompt, ContextRequestSchema);
+  }
+
+  async makeTradeDecisionWithContext(
+    userPrompt: string,
+    ticker: string,
+    priceHistory: any,
+    additionalData: { [key: string]: any }
+  ): Promise<TradeDecision> {
+    const enhancedTradeAgent = new Agent({
+      model: "gemini-2.0-flash",
+      preamble: `You are an expert cryptocurrency trading analyst with access to comprehensive market data.
+      
+      Based on the user's prompt, target token, its price history, and additional market context, provide a detailed trade recommendation.
+      
+      Analyze:
+      - Primary token price trends and patterns
+      - Volume indicators
+      - Support and resistance levels
+      - Correlation with other tokens
+      - Market sentiment from additional data
+      - Risk management parameters
+      
+      Provide specific entry, stop loss, and take profit levels with detailed reasoning.
+      
+      IMPORTANT: Return confidence as a percentage number between 0-100 (e.g., 75 for 75% confidence, not 0.75).`,
+    });
+
+    enhancedTradeAgent.knowledges.push(
+      `Target Token Price History for ${ticker}:\n${JSON.stringify(
+        priceHistory,
+        null,
+        2
+      )}`
+    );
+
+    enhancedTradeAgent.knowledges.push(
+      `Additional Market Data:\n${JSON.stringify(additionalData, null, 2)}`
+    );
+
+    enhancedTradeAgent.knowledges.push(
+      `Available tokens: ${tokens
+        .map((t) => `${t.symbol} (${t.name})`)
+        .join(", ")}`
+    );
+
+    enhancedTradeAgent.responseJsonSchema = {
+      type: "object",
+      properties: {
+        token: { type: "string" },
+        sl: { type: "number" },
+        tp: { type: "number" },
+        entry: { type: "number" },
+        currentPrice: { type: "number" },
+        message: { type: "string" },
+        confidence: { type: "number", minimum: 0, maximum: 100 },
+      },
+      required: [
+        "token",
+        "sl",
+        "tp",
+        "entry",
+        "currentPrice",
+        "message",
+        "confidence",
+      ],
+    };
+
+    return await enhancedTradeAgent.prompt(userPrompt, TradeDecisionSchema);
   }
 }
