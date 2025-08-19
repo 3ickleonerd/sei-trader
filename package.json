@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "db:generate": "bun run data/migrations/generate.ts",
+    "db:migrate": "bun run data/migrations/migrate.ts"
+  },
   "dependencies": {
     "@google/genai": "^1.14.0",
     "alith": "^0.12.1",

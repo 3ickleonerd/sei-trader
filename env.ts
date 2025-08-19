@@ -1,4 +1,9 @@
-const envKeys = ["GOOGLE_API_KEY", "CG_API_KEY", "TG_BOT_TOKEN"] as const;
+const envKeys = [
+  "GOOGLE_API_KEY",
+  "CG_API_KEY",
+  "TG_BOT_TOKEN",
+  "DB_PATH",
+] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;
 
