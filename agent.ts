@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
-import { getPriceHistory } from "./cmc";
+import { getPriceHistory } from "./coingecko";
 import { tokens } from "./tokens";
+import { z } from "zod";
 
 const ai = new GoogleGenAI({
   apiKey: Bun.env.GOOGLE_API_KEY,
@@ -17,26 +18,31 @@ type AgentConfig = Omit<
 >;
 type ModelName = "gemini-2.0-flash";
 
-interface PromptGuardResult {
-  valid: boolean;
-  reason?: string;
-}
+// Zod schemas for type safety
+const PromptGuardResultSchema = z.object({
+  valid: z.boolean(),
+  reason: z.string().optional(),
+});
 
-interface TokenExtractionResult {
-  ticker: string;
-  found: boolean;
-}
+const TokenExtractionResultSchema = z.object({
+  ticker: z.string(),
+  found: z.boolean(),
+});
 
-interface TradeDecision {
-  token: string;
-  sl: number;
-  tp: number;
-  entry: number;
-  currentPrice: number;
-  message: string;
-  reject: boolean;
-  confidence: number;
-}
+const TradeDecisionSchema = z.object({
+  token: z.string(),
+  sl: z.number(),
+  tp: z.number(),
+  entry: z.number(),
+  currentPrice: z.number(),
+  message: z.string(),
+  confidence: z.number().min(0).max(100),
+});
+
+// TypeScript types inferred from Zod schemas
+type PromptGuardResult = z.infer<typeof PromptGuardResultSchema>;
+type TokenExtractionResult = z.infer<typeof TokenExtractionResultSchema>;
+type TradeDecision = z.infer<typeof TradeDecisionSchema>;
 
 export class Agent {
   preamble: string;
@@ -54,7 +60,25 @@ export class Agent {
     });
   }
 
-  async prompt(input: string) {
+  /**
+   * Safely validate and return parsed result with Zod
+   */
+  private safeParseWithZod<T>(data: any, schema: z.ZodSchema<T>): T {
+    try {
+      return schema.parse(data);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.warn("Zod validation failed:", error.issues);
+        // You could implement fallback logic here
+        throw new Error(
+          `Validation failed: ${error.issues.map((e) => e.message).join(", ")}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  async prompt(input: string, schema?: z.ZodSchema) {
     const contents = this.parsePrompt(input);
     const res = await this.ai.models.generateContent({
       model: this.model,
@@ -70,12 +94,17 @@ export class Agent {
         return {};
       }
       const json = JSON.parse(jsonText);
+
+      // Validate with Zod schema if provided
+      if (schema) {
+        return this.safeParseWithZod(json, schema);
+      }
+
       return json;
     }
 
     return res.candidates?.[0].content;
   }
-
   /**
    * Step 1: Prompt Guard - Validates if the prompt is appropriate for trading
    */
@@ -109,7 +138,7 @@ export class Agent {
       required: ["valid"],
     };
 
-    const result = await guardAgent.prompt(userPrompt);
+    const result = await guardAgent.prompt(userPrompt, PromptGuardResultSchema);
     return result as PromptGuardResult;
   }
 
@@ -139,7 +168,10 @@ export class Agent {
       required: ["ticker", "found"],
     };
 
-    const result = await tickerAgent.prompt(userPrompt);
+    const result = await tickerAgent.prompt(
+      userPrompt,
+      TokenExtractionResultSchema
+    );
     return result as TokenExtractionResult;
   }
 
@@ -163,7 +195,8 @@ export class Agent {
       - Risk management parameters
       
       Provide specific entry, stop loss, and take profit levels with detailed reasoning.
-      Set reject to true only if the trade setup is too risky or unclear.`,
+      
+      IMPORTANT: Return confidence as a percentage number between 0-100 (e.g., 75 for 75% confidence, not 0.75).`,
     });
 
     tradeAgent.knowledges.push(
@@ -188,8 +221,7 @@ export class Agent {
         entry: { type: "number" },
         currentPrice: { type: "number" },
         message: { type: "string" },
-        reject: { type: "boolean" },
-        confidence: { type: "number" },
+        confidence: { type: "number", minimum: 0, maximum: 100 },
       },
       required: [
         "token",
@@ -198,12 +230,11 @@ export class Agent {
         "entry",
         "currentPrice",
         "message",
-        "reject",
         "confidence",
       ],
     };
 
-    const result = await tradeAgent.prompt(userPrompt);
+    const result = await tradeAgent.prompt(userPrompt, TradeDecisionSchema);
     return result as TradeDecision;
   }
 
@@ -298,5 +329,53 @@ export class Agent {
     }
     contents.push("User Prompt:\n" + input);
     return contents.join("\n");
+  }
+
+  /**
+   * Helper method to convert Zod schema to JSON schema for AI model
+   */
+  private zodToJsonSchema(schema: z.ZodSchema): any {
+    // This is a simplified conversion - for production use a library like zod-to-json-schema
+    if (schema instanceof z.ZodObject) {
+      const shape = schema.shape;
+      const properties: any = {};
+      const required: string[] = [];
+
+      for (const [key, value] of Object.entries(shape)) {
+        if (value instanceof z.ZodString) {
+          properties[key] = { type: "string" };
+        } else if (value instanceof z.ZodNumber) {
+          properties[key] = { type: "number" };
+        } else if (value instanceof z.ZodBoolean) {
+          properties[key] = { type: "boolean" };
+        } else if (value instanceof z.ZodOptional) {
+          // Handle optional fields
+          const innerType = value._def.innerType;
+          if (innerType instanceof z.ZodString) {
+            properties[key] = { type: "string" };
+          } else if (innerType instanceof z.ZodNumber) {
+            properties[key] = { type: "number" };
+          } else if (innerType instanceof z.ZodBoolean) {
+            properties[key] = { type: "boolean" };
+          }
+        } else {
+          // Default to string for unknown types
+          properties[key] = { type: "string" };
+        }
+
+        // Add to required if not optional
+        if (!(value instanceof z.ZodOptional)) {
+          required.push(key);
+        }
+      }
+
+      return {
+        type: "object",
+        properties,
+        required,
+      };
+    }
+
+    return { type: "object" };
   }
 }
