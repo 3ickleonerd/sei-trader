@@ -7,9 +7,10 @@ import {
 } from "./coingecko";
 import { tokens } from "./tokens";
 import { z } from "zod";
+import env from "../../env";
 
 const ai = new GoogleGenAI({
-  apiKey: Bun.env.GOOGLE_API_KEY,
+  apiKey: env.GOOGLE_API_KEY,
   httpOptions: {},
 });
 
@@ -75,7 +76,7 @@ export class Agent {
     this.preamble = options.preamble;
     this.model = options.model;
     this.ai = new GoogleGenAI({
-      apiKey: Bun.env.GOOGLE_API_KEY,
+      apiKey: env.GOOGLE_API_KEY,
     });
   }
 
@@ -120,9 +121,12 @@ export class Agent {
     return res.candidates?.[0].content;
   }
   async promptGuard(userPrompt: string): Promise<PromptGuardResult> {
+    const currentTimestamp = new Date().toISOString();
     const guardAgent = new Agent({
       model: "gemini-2.0-flash",
       preamble: `You are a prompt guard for a cryptocurrency trading bot. 
+      Current timestamp: ${currentTimestamp}
+      
       Analyze the user's prompt and determine if it's appropriate for cryptocurrency trading.
       
       Valid prompts include:
@@ -154,9 +158,12 @@ export class Agent {
   }
 
   async extractTicker(userPrompt: string): Promise<TokenExtractionResult> {
+    const currentTimestamp = new Date().toISOString();
     const tickerAgent = new Agent({
       model: "gemini-2.0-flash",
       preamble: `You are a token ticker extraction agent. 
+      Current timestamp: ${currentTimestamp}
+      
       Analyze the user's prompt and extract the cryptocurrency ticker they want to trade.
       
       Available tokens: ${tokens.map((t) => t.symbol).join(", ")}
@@ -188,9 +195,12 @@ export class Agent {
     ticker: string,
     priceHistory: any
   ): Promise<TradeDecision> {
+    const currentTimestamp = new Date().toISOString();
     const tradeAgent = new Agent({
       model: "gemini-2.0-flash",
       preamble: `You are an expert cryptocurrency trading analyst. 
+      Current timestamp: ${currentTimestamp}
+      
       Based on the user's prompt, token ticker, and price history data, provide a detailed trade recommendation.
       
       Analyze:
@@ -509,9 +519,11 @@ export class Agent {
     cachedData: { [symbol: string]: any },
     marketSummary: any
   ): Promise<GenericAdvice> {
+    const currentTimestamp = new Date().toISOString();
     const adviceAgent = new Agent({
       model: "gemini-2.0-flash",
       preamble: `You are an expert cryptocurrency trading analyst providing general trading advice.
+      Current timestamp: ${currentTimestamp}
       
       The user has asked for trading advice without specifying a particular token.
       
@@ -555,9 +567,11 @@ export class Agent {
     ticker: string,
     priceHistory: any
   ): Promise<ContextRequest> {
+    const currentTimestamp = new Date().toISOString();
     const contextAgent = new Agent({
       model: "gemini-2.0-flash",
       preamble: `You are an expert cryptocurrency analyst reviewing if additional market data is needed.
+      Current timestamp: ${currentTimestamp}
       
       Given the user prompt, target token, and its price history, determine if you need additional context such as:
       - Price data from other tokens for comparison
@@ -593,9 +607,11 @@ export class Agent {
     priceHistory: any,
     additionalData: { [key: string]: any }
   ): Promise<TradeDecision> {
+    const currentTimestamp = new Date().toISOString();
     const enhancedTradeAgent = new Agent({
       model: "gemini-2.0-flash",
       preamble: `You are an expert cryptocurrency trading analyst with access to comprehensive market data.
+      Current timestamp: ${currentTimestamp}
       
       Based on the user's prompt, target token, its price history, and additional market context, provide a detailed trade recommendation.
       
