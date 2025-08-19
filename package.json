@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@google/genai": "^1.14.0",
+    "alith": "^0.12.1",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.20",
+    "@types/json-schema": "^7.0.15"
+  }
+}
