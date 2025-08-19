@@ -2,8 +2,12 @@
   "scripts": {
     "db:generate": "bun run data/migrations/generate.ts",
     "db:migrate": "bun run data/migrations/migrate.ts",
+    "db:push": "bun db:generate; bun db:migrate",
     "server:dev": "bun run src/server/index.ts"
   },
+  "workspaces": [
+    "./evm"
+  ],
   "dependencies": {
     "@google/genai": "^1.14.0",
     "alith": "^0.12.1",
