@@ -5,6 +5,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import CaretOrchestrator from "../artifacts/src/CaretOrchestrator.sol/CaretOrchestrator.json";
 import CaretEscrow from "../artifacts/src/CaretEscrow.sol/CaretEscrow.json";
 import USDT from "../artifacts/src/usdt.sol/USDT.json";
+import TestToken from "../artifacts/src/TestToken.sol/TestToken.json";
+import { tokens } from "../../src/bot/tokens";
 
 const networkArg = Bun.argv[2];
 const isSei = networkArg === "sei";
@@ -35,13 +37,27 @@ const client = viem
   })
   .extend(viem.publicActions);
 
-const definitions: Record<
-  string,
-  {
+const definitions: {
+  CaretOrchestrator?: {
     abi: any;
     address?: viem.Address;
-  }
-> = {};
+  };
+  CaretEscrow?: {
+    abi: any;
+    address?: viem.Address;
+  };
+  USDT?: {
+    abi: any;
+    address?: viem.Address;
+  };
+  tokens?: Record<
+    string,
+    {
+      abi: any;
+      address: viem.Address;
+    }
+  >;
+} = {};
 
 async function main() {
   console.log(`Deploying to ${getChain().name}...`);
@@ -52,6 +68,9 @@ async function main() {
 
   if (!viem.isHex(USDT.bytecode))
     throw new Error("USDT bytecode is missing or invalid");
+
+  if (!viem.isHex(TestToken.bytecode))
+    throw new Error("TestToken bytecode is missing or invalid");
 
   const serverAddress = client.account.address;
 
@@ -74,7 +93,7 @@ async function main() {
   const orchestratorHash = await client.deployContract({
     abi: CaretOrchestrator.abi,
     bytecode: CaretOrchestrator.bytecode,
-    args: [serverAddress],
+    args: [serverAddress, usdtReceipt.contractAddress],
   });
 
   const orchestratorReceipt = await client.waitForTransactionReceipt({
@@ -87,6 +106,44 @@ async function main() {
   console.log(
     `CaretOrchestrator deployed at: ${orchestratorReceipt.contractAddress}`
   );
+
+  console.log("\nDeploying test tokens...");
+  const testTokens: Record<
+    string,
+    {
+      abi: any;
+      address: viem.Address;
+    }
+  > = {};
+
+  for (const token of tokens) {
+    const testTokenName = `Test ${token.name}`;
+    const testTokenSymbol = token.symbol;
+
+    console.log(`Deploying ${testTokenName} (${testTokenSymbol})...`);
+
+    const tokenHash = await client.deployContract({
+      abi: TestToken.abi,
+      bytecode: TestToken.bytecode,
+      args: [testTokenName, testTokenSymbol, usdtReceipt.contractAddress],
+    });
+
+    const tokenReceipt = await client.waitForTransactionReceipt({
+      hash: tokenHash,
+    });
+
+    if (!tokenReceipt.contractAddress)
+      throw new Error(`${testTokenSymbol} deployment failed`);
+
+    console.log(
+      `${testTokenSymbol} deployed at: ${tokenReceipt.contractAddress}`
+    );
+
+    testTokens[testTokenSymbol] = {
+      abi: TestToken.abi,
+      address: tokenReceipt.contractAddress,
+    };
+  }
 
   definitions["CaretOrchestrator"] = {
     abi: CaretOrchestrator.abi,
@@ -102,11 +159,14 @@ async function main() {
     address: usdtReceipt.contractAddress,
   };
 
+  definitions.tokens = testTokens;
+
   console.log("\nDeployment Summary:");
   console.log("===================");
   console.log(`USDT: ${usdtReceipt.contractAddress}`);
   console.log(`CaretOrchestrator: ${orchestratorReceipt.contractAddress}`);
   console.log(`Server address: ${serverAddress}`);
+  console.log(`Test Tokens deployed: ${Object.keys(testTokens).length}`);
 }
 
 main()

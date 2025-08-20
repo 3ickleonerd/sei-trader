@@ -60,6 +60,81 @@ async function getSEIBalance(escrowAddress: string): Promise<string> {
   }
 }
 
+async function getAllTokenBalances(
+  escrowAddress: string
+): Promise<Array<{ symbol: string; balance: string; name: string }>> {
+  const balances: Array<{ symbol: string; balance: string; name: string }> = [];
+
+  try {
+    const seiBalance = await getSEIBalance(escrowAddress);
+    if (parseFloat(seiBalance) > 0) {
+      balances.push({
+        symbol: "SEI",
+        balance: seiBalance,
+        name: "SEI",
+      });
+    }
+
+    const usdtBalance = await getUSDTBalance(escrowAddress);
+    if (parseFloat(usdtBalance) > 0) {
+      balances.push({
+        symbol: "USDT",
+        balance: usdtBalance,
+        name: "USDT",
+      });
+    }
+
+    if (definitions.tokens) {
+      for (const [symbol, tokenDef] of Object.entries(definitions.tokens)) {
+        try {
+          const tokenContract = {
+            address: tokenDef.address,
+            abi: tokenDef.abi,
+          } as const;
+
+          const balance = await evmClient.readContract({
+            address: tokenContract.address,
+            abi: tokenContract.abi,
+            functionName: "balanceOf",
+            args: [escrowAddress as `0x${string}`],
+          });
+
+          const decimals = await evmClient.readContract({
+            address: tokenContract.address,
+            abi: tokenContract.abi,
+            functionName: "decimals",
+            args: [],
+          });
+
+          const name = await evmClient.readContract({
+            address: tokenContract.address,
+            abi: tokenContract.abi,
+            functionName: "name",
+            args: [],
+          });
+
+          const balanceFormatted =
+            Number(balance) / Math.pow(10, Number(decimals));
+
+          if (balanceFormatted > 0) {
+            balances.push({
+              symbol,
+              balance: balanceFormatted.toFixed(6),
+              name: name as string,
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching balance for ${symbol}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching token balances:", error);
+  }
+
+  return balances;
+}
+
 const userSessions = new Map<number, { step: string; data?: any }>();
 
 enum MessageType {
@@ -712,9 +787,10 @@ bot.callbackQuery(/^agent_(\d+)$/, async (ctx) => {
 
   const keyboard = new InlineKeyboard()
     .text("🤖 Trade Suggestion", `trade_suggestion_${agentId}`)
+    .text("💰 Agent Balance", `agent_balance_${agentId}`)
     .row()
     .text("🗑️ Delete Agent", `delete_agent_${agentId}`)
-    .text("💰 Fund Agent", `fund_agent_${agentId}`)
+    .text("� Fund Agent", `fund_agent_${agentId}`)
     .row()
     .text("🔙 Back to Agents", "my_agents");
 
@@ -947,5 +1023,70 @@ bot.callbackQuery(/^fund_agent_(\d+)$/, async (ctx) => {
       reply_markup: keyboard,
       parse_mode: "Markdown",
     });
+  }
+});
+
+bot.callbackQuery(/^agent_balance_(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Fetching agent balances..." });
+
+  const agentId = parseInt(ctx.match[1]);
+  const userId = getUserId(ctx.from?.id!);
+
+  if (!userId) {
+    return ctx.reply("User not found. Please use /start to register.");
+  }
+
+  const agent = db
+    .query("SELECT * FROM user_agents WHERE id = ? AND user_id = ?")
+    .get(agentId, userId) as any;
+
+  if (!agent) {
+    return ctx.reply(
+      "❌ Agent not found or you don't have permission to view its balance."
+    );
+  }
+
+  try {
+    const balances = await getAllTokenBalances(agent.escrow_address);
+
+    let message = `💰 **${agent.agent_name} - Token Balances**\n\n`;
+    message += `🏦 **Escrow Address:**\n\`${agent.escrow_address}\`\n\n`;
+
+    if (balances.length === 0) {
+      message += `📭 **No token balances found**\n\n`;
+      message += `The agent's escrow wallet is empty. To enable trading, send USDT to the escrow address above.`;
+    } else {
+      message += `📊 **Available Balances:**\n\n`;
+
+      balances.forEach((token) => {
+        message += `• **${token.symbol}** (${token.name}): \`${token.balance}\`\n`;
+      });
+
+      message += `\n💡 **Note:** The agent can trade with any tokens available in its escrow balance.`;
+    }
+
+    const keyboard = new InlineKeyboard()
+      .text("🔄 Refresh Balance", `agent_balance_${agentId}`)
+      .row()
+      .text("💸 Fund Agent", `fund_agent_${agentId}`)
+      .text("🔙 Back to Agent", `agent_${agentId}`)
+      .row()
+      .text("🤖 View My Agents", "my_agents");
+
+    await ctx.reply(message, {
+      reply_markup: keyboard,
+      parse_mode: "Markdown",
+    });
+  } catch (error) {
+    console.error("Error fetching agent balances:", error);
+    await ctx.reply(
+      "❌ Error fetching agent balances. Please try again later.",
+      {
+        reply_markup: new InlineKeyboard().text(
+          "🔙 Back to Agent",
+          `agent_${agentId}`
+        ),
+      }
+    );
   }
 });
