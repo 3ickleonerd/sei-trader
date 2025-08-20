@@ -1,5 +1,11 @@
 import { evmClient, primaryChain } from "../../../evm";
-import { createWalletClient, http, keccak256, toBytes } from "viem";
+import {
+  createWalletClient,
+  http,
+  keccak256,
+  toBytes,
+  publicActions,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 export async function deriveActor(seed: string) {
@@ -10,5 +16,5 @@ export async function deriveActor(seed: string) {
     chain: primaryChain,
     account: privateKeyToAccount(pvtKey),
     transport: http(primaryChain.rpcUrls.default.http[0]),
-  });
+  }).extend(publicActions);
 }
