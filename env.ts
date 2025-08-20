@@ -4,6 +4,7 @@ const envKeys = [
   "TG_BOT_TOKEN",
   "DB_PATH",
   "PORT",
+  "SERVER_URL",
 ] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;
