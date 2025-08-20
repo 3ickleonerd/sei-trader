@@ -1,7 +1,8 @@
+import { db } from "../../db";
 import env from "../../env";
 import { Bot, InlineKeyboard } from "grammy";
 
-const bot = new Bot(env.TG_BOT_TOKEN!);
+export const bot = new Bot(env.TG_BOT_TOKEN!);
 
 bot.use((ctx, next) => {
   if (ctx.chat?.type !== "private") {
@@ -12,7 +13,7 @@ bot.use((ctx, next) => {
 
 bot.command("start", (ctx) => {
   const keyboard = new InlineKeyboard()
-    .url("� Read Terms & Conditions", "https://example.com/tnc")
+    .url("📜 Read Terms & Conditions", `${env.SERVER_URL}/tnc`)
     .row()
     .text("✅ Accept Terms & Conditions", "accept_tnc");
 
@@ -28,19 +29,24 @@ I will be waiting! 😀`;
 });
 
 bot.callbackQuery("accept_tnc", async (ctx) => {
-  console.log("=== USER ACCEPTED TnC ===");
-  console.log("Full context:", JSON.stringify(ctx, null, 2));
-  console.log("User info:", ctx.from);
-  console.log("Chat info:", ctx.chat);
-  console.log("Message info:", ctx.msg);
-  console.log("Callback query:", ctx.callbackQuery);
-  console.log("Update:", ctx.update);
-  console.log("========================");
+  const tg_id = ctx.from?.id;
+  const tg_username = ctx.from?.username;
+  const accepted_tnc_at = Date.now();
+  const tnc_version = 1;
+
+  if (!(tg_username && tg_id)) {
+    return ctx.reply(
+      "Failed to retrieve user information. Is your profile public?"
+    );
+  }
+
+  db.run(
+    "INSERT INTO users (telegram_username, telegram_id, accepted_tnc_at, tnc_version) VALUES (?, ?, ?, ?)",
+    [tg_username, tg_id, accepted_tnc_at, tnc_version]
+  );
 
   await ctx.answerCallbackQuery({ text: "Terms & Conditions accepted! ✅" });
   await ctx.editMessageText(
-    "✅ Thank you for accepting our Terms & Conditions!\n\nYou can now use our bot services."
+    "✅ Thank you for accepting our Terms & Conditions!\n\nYou can now start using our bot."
   );
 });
-
-bot.start();
