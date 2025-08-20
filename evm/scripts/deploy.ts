@@ -4,6 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import CaretOrchestrator from "../artifacts/src/CaretOrchestrator.sol/CaretOrchestrator.json";
 import CaretEscrow from "../artifacts/src/CaretEscrow.sol/CaretEscrow.json";
+import USDT from "../artifacts/src/usdt.sol/USDT.json";
 
 const networkArg = Bun.argv[2];
 const isSei = networkArg === "sei";
@@ -49,7 +50,25 @@ async function main() {
   if (!viem.isHex(CaretOrchestrator.bytecode))
     throw new Error("CaretOrchestrator bytecode is missing or invalid");
 
+  if (!viem.isHex(USDT.bytecode))
+    throw new Error("USDT bytecode is missing or invalid");
+
   const serverAddress = client.account.address;
+
+  console.log("Deploying USDT...");
+  const usdtHash = await client.deployContract({
+    abi: USDT.abi,
+    bytecode: USDT.bytecode,
+    args: [],
+  });
+
+  const usdtReceipt = await client.waitForTransactionReceipt({
+    hash: usdtHash,
+  });
+
+  if (!usdtReceipt.contractAddress) throw new Error("USDT deployment failed");
+
+  console.log(`USDT deployed at: ${usdtReceipt.contractAddress}`);
 
   console.log("Deploying CaretOrchestrator...");
   const orchestratorHash = await client.deployContract({
@@ -78,8 +97,14 @@ async function main() {
     abi: CaretEscrow.abi,
   };
 
+  definitions["USDT"] = {
+    abi: USDT.abi,
+    address: usdtReceipt.contractAddress,
+  };
+
   console.log("\nDeployment Summary:");
   console.log("===================");
+  console.log(`USDT: ${usdtReceipt.contractAddress}`);
   console.log(`CaretOrchestrator: ${orchestratorReceipt.contractAddress}`);
   console.log(`Server address: ${serverAddress}`);
 }

@@ -35,4 +35,11 @@ export const contracts = {
       address,
     });
   },
+
+  usdt() {
+    return viem.getContract({
+      client: evmClient,
+      ...definitions.USDT,
+    });
+  },
 };
