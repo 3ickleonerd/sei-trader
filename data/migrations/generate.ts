@@ -14,6 +14,23 @@ function generateTimestamp(): string {
   return `${year}${month}${day}${hours}${minutes}${seconds}`;
 }
 
+function hasRealSqlContent(content: string): boolean {
+  const lines = content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line);
+
+  for (const line of lines) {
+    if (line.startsWith("--")) continue;
+    if (line.startsWith("/*") || line.endsWith("*/")) continue;
+    if (line.length > 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function generateMigrationName(content: string): string {
   const lines = content
     .split("\n")
@@ -79,6 +96,19 @@ async function createMigrationFromAddSql(): Promise<void> {
       console.log("💡 Example content for new.sql:");
       console.log("   -- Add your SQL statements here");
       console.log("   CREATE TABLE example (id INTEGER PRIMARY KEY);");
+      return;
+    }
+
+    if (!hasRealSqlContent(trimmedContent)) {
+      console.log(
+        "⚠️ new.sql contains only comments or empty lines. Please add actual SQL statements."
+      );
+      console.log("💡 Example content for new.sql:");
+      console.log("   CREATE TABLE example (id INTEGER PRIMARY KEY);");
+      console.log("   ALTER TABLE users ADD COLUMN email TEXT;");
+      console.log(
+        "   INSERT INTO settings (key, value) VALUES ('app', 'ready');"
+      );
       return;
     }
 
@@ -173,4 +203,9 @@ if (import.meta.main) {
   });
 }
 
-export { createMigrationFromAddSql, generateTimestamp, generateMigrationName };
+export {
+  createMigrationFromAddSql,
+  generateTimestamp,
+  generateMigrationName,
+  hasRealSqlContent,
+};

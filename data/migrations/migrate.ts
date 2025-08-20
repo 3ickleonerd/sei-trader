@@ -27,7 +27,7 @@ export class MigrationRunner {
   constructor() {
     this.migrationsDir = join(
       dirname(import.meta.url.replace("file:///", "")),
-      "migrations"
+      "history"
     );
 
     this.migrationsDir = this.migrationsDir.replace(/^\/([A-Z]:)/, "$1");
