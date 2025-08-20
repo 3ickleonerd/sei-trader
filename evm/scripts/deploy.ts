@@ -4,8 +4,6 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import CaretOrchestrator from "../artifacts/src/CaretOrchestrator.sol/CaretOrchestrator.json";
 import CaretEscrow from "../artifacts/src/CaretEscrow.sol/CaretEscrow.json";
-import SignatureVerifier from "../artifacts/src/SignatureVerifier.sol/SignatureVerifier.json";
-import AuxillaryList from "../artifacts/src/AuxillaryList.sol/AuxillaryList.json";
 
 const networkArg = Bun.argv[2];
 const isSei = networkArg === "sei";
@@ -48,46 +46,6 @@ async function main() {
   console.log(`Deploying to ${getChain().name}...`);
   console.log(`Deployer address: ${client.account.address}`);
 
-  if (!viem.isHex(SignatureVerifier.bytecode))
-    throw new Error("SignatureVerifier bytecode is missing or invalid");
-
-  console.log("Deploying SignatureVerifier...");
-  const signatureVerifierHash = await client.deployContract({
-    abi: SignatureVerifier.abi,
-    bytecode: SignatureVerifier.bytecode,
-  });
-
-  const signatureVerifierReceipt = await client.waitForTransactionReceipt({
-    hash: signatureVerifierHash,
-  });
-
-  if (!signatureVerifierReceipt.contractAddress)
-    throw new Error("SignatureVerifier deployment failed");
-
-  console.log(
-    `SignatureVerifier deployed at: ${signatureVerifierReceipt.contractAddress}`
-  );
-
-  if (!viem.isHex(AuxillaryList.bytecode))
-    throw new Error("AuxillaryList bytecode is missing or invalid");
-
-  console.log("Deploying AuxillaryList...");
-  const auxillaryListHash = await client.deployContract({
-    abi: AuxillaryList.abi,
-    bytecode: AuxillaryList.bytecode,
-  });
-
-  const auxillaryListReceipt = await client.waitForTransactionReceipt({
-    hash: auxillaryListHash,
-  });
-
-  if (!auxillaryListReceipt.contractAddress)
-    throw new Error("AuxillaryList deployment failed");
-
-  console.log(
-    `AuxillaryList deployed at: ${auxillaryListReceipt.contractAddress}`
-  );
-
   if (!viem.isHex(CaretOrchestrator.bytecode))
     throw new Error("CaretOrchestrator bytecode is missing or invalid");
 
@@ -111,16 +69,6 @@ async function main() {
     `CaretOrchestrator deployed at: ${orchestratorReceipt.contractAddress}`
   );
 
-  definitions["SignatureVerifier"] = {
-    abi: SignatureVerifier.abi,
-    address: signatureVerifierReceipt.contractAddress,
-  };
-
-  definitions["AuxillaryList"] = {
-    abi: AuxillaryList.abi,
-    address: auxillaryListReceipt.contractAddress,
-  };
-
   definitions["CaretOrchestrator"] = {
     abi: CaretOrchestrator.abi,
     address: orchestratorReceipt.contractAddress,
@@ -132,8 +80,6 @@ async function main() {
 
   console.log("\nDeployment Summary:");
   console.log("===================");
-  console.log(`SignatureVerifier: ${signatureVerifierReceipt.contractAddress}`);
-  console.log(`AuxillaryList: ${auxillaryListReceipt.contractAddress}`);
   console.log(`CaretOrchestrator: ${orchestratorReceipt.contractAddress}`);
   console.log(`Server address: ${serverAddress}`);
 }
