@@ -1,11 +1,27 @@
 import env from "../../env";
 import { generateTncHtml } from "./utils/tncHtml.ts";
 import { bot } from "../telegram";
+import { db } from "../../db";
+import { readFileSync } from "fs";
+import { join } from "path";
 
+// Ensure migartions
+const migrationPath = join(process.cwd(), "data", "migrations", "up.sql");
+const migrationSQL = readFileSync(migrationPath, "utf-8");
+const statements = migrationSQL
+  .split(";")
+  .map((stmt) => stmt.trim())
+  .filter((stmt) => stmt.length > 0);
+for (const statement of statements) {
+  db.run(statement);
+}
+
+// Start TG bot
 bot.start();
 
 const port = parseInt(env.PORT);
 
+// Server
 export default {
   port,
   async fetch(req) {
