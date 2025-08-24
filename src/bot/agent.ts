@@ -42,6 +42,7 @@ const TradeDecisionSchema = z.object({
   currentPrice: z.number(),
   message: z.string(),
   confidence: z.number().min(0).max(100),
+  tradeAmount: z.number().optional(), // Suggested trade amount in USDT
 });
 
 const ContextRequestSchema = z.object({
@@ -193,13 +194,24 @@ export class Agent {
   async makeTradeDecision(
     userPrompt: string,
     ticker: string,
-    priceHistory: any
+    priceHistory: any,
+    walletBalance?: number
   ): Promise<TradeDecision> {
     const currentTimestamp = new Date().toISOString();
+    const walletBalanceInfo = walletBalance 
+      ? `\n      User's current USDT wallet balance: ${walletBalance} USDT\n      
+      CRITICAL: For risk management, suggest trades using 10% to 90% of available balance based on risk assessment.
+      Available balance: ${walletBalance} USDT
+      Suggest between ${(walletBalance * 0.1).toFixed(2)} USDT (10%) and ${(walletBalance * 0.9).toFixed(2)} USDT (90%).
+      Choose percentage based on trade confidence, market volatility, and risk level.
+      Higher confidence = higher percentage (up to 90%), Lower confidence = lower percentage (down to 10%).
+      NEVER suggest more than 90% or less than 10% of the balance.`
+      : `\n      User's wallet balance: Unknown - provide general trade recommendation without specific amounts.`;
+
     const tradeAgent = new Agent({
       model: "gemini-2.0-flash",
       preamble: `You are an expert cryptocurrency trading analyst. 
-      Current timestamp: ${currentTimestamp}
+      Current timestamp: ${currentTimestamp}${walletBalanceInfo}
       
       Based on the user's prompt, token ticker, and price history data, provide a detailed trade recommendation.
       
@@ -208,8 +220,10 @@ export class Agent {
       - Volume indicators
       - Support and resistance levels
       - Risk management parameters
+      - User's available balance for trading
       
       Provide specific entry, stop loss, and take profit levels with detailed reasoning.
+      Also suggest an appropriate trade amount (tradeAmount) in USDT that fits within the user's budget.
       
       IMPORTANT: Return confidence as a percentage number between 0-100 (e.g., 75 for 75% confidence, not 0.75).`,
     });
@@ -237,6 +251,7 @@ export class Agent {
         currentPrice: { type: "number" },
         message: { type: "string" },
         confidence: { type: "number", minimum: 0, maximum: 100 },
+        tradeAmount: { type: "number" },
       },
       required: [
         "token",
@@ -246,6 +261,7 @@ export class Agent {
         "currentPrice",
         "message",
         "confidence",
+        "tradeAmount",
       ],
     };
 
@@ -256,7 +272,7 @@ export class Agent {
   /**
    * Complete trading workflow
    */
-  async processTradeRequest(userPrompt: string): Promise<{
+  async processTradeRequest(userPrompt: string, walletBalance?: number): Promise<{
     guardResult: PromptGuardResult;
     tickerResult?: TokenExtractionResult;
     priceHistory?: any;
@@ -301,7 +317,8 @@ export class Agent {
       const tradeDecision = await this.makeTradeDecision(
         userPrompt,
         tickerResult.ticker,
-        priceHistory
+        priceHistory,
+        walletBalance
       );
 
       return {
@@ -386,7 +403,7 @@ export class Agent {
   /**
    * Enhanced workflow that handles generic trading advice and context requests
    */
-  async enhancedWorkflow(userPrompt: string): Promise<{
+  async enhancedWorkflow(userPrompt: string, walletBalance?: number): Promise<{
     guardResult: PromptGuardResult;
     tickerResult?: TokenExtractionResult;
     priceHistory?: any;
@@ -480,7 +497,8 @@ export class Agent {
           userPrompt,
           tickerResult.ticker,
           priceHistory,
-          additionalData
+          additionalData,
+          walletBalance
         );
 
         return {
@@ -496,7 +514,8 @@ export class Agent {
       const tradeDecision = await this.makeTradeDecision(
         userPrompt,
         tickerResult.ticker,
-        priceHistory
+        priceHistory,
+        walletBalance
       );
 
       return {
@@ -605,13 +624,24 @@ export class Agent {
     userPrompt: string,
     ticker: string,
     priceHistory: any,
-    additionalData: { [key: string]: any }
+    additionalData: { [key: string]: any },
+    walletBalance?: number
   ): Promise<TradeDecision> {
     const currentTimestamp = new Date().toISOString();
+    const walletBalanceInfo = walletBalance 
+      ? `\n      User's current USDT wallet balance: ${walletBalance} USDT\n      
+      CRITICAL: For risk management, suggest trades using 10% to 90% of available balance based on risk assessment.
+      Available balance: ${walletBalance} USDT
+      Suggest between ${(walletBalance * 0.1).toFixed(2)} USDT (10%) and ${(walletBalance * 0.9).toFixed(2)} USDT (90%).
+      Choose percentage based on trade confidence, market volatility, and risk level.
+      Higher confidence = higher percentage (up to 90%), Lower confidence = lower percentage (down to 10%).
+      NEVER suggest more than 90% or less than 10% of the balance.`
+      : `\n      User's wallet balance: Unknown - provide general trade recommendation without specific amounts.`;
+
     const enhancedTradeAgent = new Agent({
       model: "gemini-2.0-flash",
       preamble: `You are an expert cryptocurrency trading analyst with access to comprehensive market data.
-      Current timestamp: ${currentTimestamp}
+      Current timestamp: ${currentTimestamp}${walletBalanceInfo}
       
       Based on the user's prompt, target token, its price history, and additional market context, provide a detailed trade recommendation.
       
@@ -622,8 +652,10 @@ export class Agent {
       - Correlation with other tokens
       - Market sentiment from additional data
       - Risk management parameters
+      - User's available balance for trading
       
       Provide specific entry, stop loss, and take profit levels with detailed reasoning.
+      Also suggest an appropriate trade amount (tradeAmount) in USDT that fits within the user's budget.
       
       IMPORTANT: Return confidence as a percentage number between 0-100 (e.g., 75 for 75% confidence, not 0.75).`,
     });
@@ -656,6 +688,7 @@ export class Agent {
         currentPrice: { type: "number" },
         message: { type: "string" },
         confidence: { type: "number", minimum: 0, maximum: 100 },
+        tradeAmount: { type: "number" },
       },
       required: [
         "token",
@@ -665,6 +698,7 @@ export class Agent {
         "currentPrice",
         "message",
         "confidence",
+        "tradeAmount",
       ],
     };
 

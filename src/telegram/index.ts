@@ -7,8 +7,6 @@ import { tokens } from "../bot/tokens";
 import definitions from "../../definitions";
 import { Agent } from "../bot/agent";
 import * as viem from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { hardhat } from "viem/chains";
 
 export const bot = new Bot(env.TG_BOT_TOKEN!);
 
@@ -71,13 +69,24 @@ async function executeTrade(
       args: [escrowAddress],
     });
 
+    // Get USDT decimals for proper formatting
+    const usdtDecimals = await actorClient.readContract({
+      address: usdtContract.address,
+      abi: usdtContract.abi,
+      functionName: "decimals",
+      args: [],
+    });
+    
+    console.log(`Initial escrow USDT balance: ${Number(escrowUsdtBalance) / 10**Number(usdtDecimals)} USDT`);
+    console.log(`Required USDT cost: ${Number(usdtCost) / 10**Number(usdtDecimals)} USDT`);
+
     if (escrowUsdtBalance < usdtCost) {
       return {
         success: false,
         error: `Insufficient USDT balance. Escrow has ${
-          Number(escrowUsdtBalance) / 10 ** 6
+          Number(escrowUsdtBalance) / 10 ** Number(usdtDecimals)
         } USDT, but needs ${
-          Number(usdtCost) / 10 ** 6
+          Number(usdtCost) / 10 ** Number(usdtDecimals)
         } USDT. Please fund the escrow address first.`,
       };
     }
@@ -115,6 +124,8 @@ async function executeTrade(
       ],
     } as const;
 
+    console.log(`Executing fundActor: transferring ${Number(usdtCost) / 10**Number(usdtDecimals)} USDT from escrow to actor`);
+    
     const fundActorHash = await actorClient.writeContract({
       address: escrowContract.address,
       abi: escrowContract.abi,
@@ -122,7 +133,9 @@ async function executeTrade(
       args: [usdtContract.address, usdtCost],
     });
 
-    await actorClient.waitForTransactionReceipt({ hash: fundActorHash });
+    console.log(`FundActor transaction submitted: ${fundActorHash}`);
+    const fundActorReceipt = await actorClient.waitForTransactionReceipt({ hash: fundActorHash });
+    console.log(`FundActor transaction confirmed: ${fundActorReceipt.status}`);
 
     const currentAllowance = await actorClient.readContract({
       address: usdtContract.address,
@@ -148,6 +161,20 @@ async function executeTrade(
       functionName: "buy",
       args: [tokenAmount, usdtCost],
     });
+
+    // Wait for buy transaction to complete
+    await actorClient.waitForTransactionReceipt({ hash });
+    
+    // Check final balances to verify the trade worked
+    const finalEscrowUsdtBalance = await actorClient.readContract({
+      address: usdtContract.address,
+      abi: usdtContract.abi,
+      functionName: "balanceOf",
+      args: [escrowAddress],
+    });
+    
+    console.log(`Final escrow USDT balance: ${Number(finalEscrowUsdtBalance) / 10**18} USDT`);
+    console.log(`Balance change: ${Number(escrowUsdtBalance - finalEscrowUsdtBalance) / 10**18} USDT`);
 
     return { success: true, txHash: hash };
   } catch (error) {
@@ -192,7 +219,7 @@ async function getUSDTBalance(escrowAddress: string): Promise<string> {
     return balanceFormatted.toFixed(2);
   } catch (error) {
     console.error("Error fetching USDT balance:", error);
-    return "0.00";
+    return "0.000000";
   }
 }
 
@@ -774,6 +801,118 @@ bot.on("message:text", async (ctx) => {
   const session = userSessions.get(telegramId);
   const messageText = ctx.message.text.trim();
 
+  // Check for database user sessions as well (custom amount, etc.)
+  const dbUserId = getUserId(telegramId);
+  const dbSession = dbUserId ? userSessions.get(dbUserId) : null;
+  
+  // Prioritize custom amount input sessions
+  if (dbSession && dbSession.step === "awaiting_custom_amount") {
+    console.log(`Found custom amount session in first handler for user ${dbUserId}, processing input: ${messageText}`);
+    
+    // Validate custom amount input
+    const customAmount = parseFloat(messageText);
+    if (isNaN(customAmount) || customAmount <= 0) {
+      return ctx.reply(
+        "❌ **Invalid Amount**\n\n" +
+        "Please enter a valid positive number.\n" +
+        "Example: `25` or `50.5`",
+        { parse_mode: "Markdown" }
+      );
+    }
+
+    // Get user's actual USDT balance for validation
+    const sessionData = dbSession.data;
+    const agent = db.query("SELECT * FROM user_agents WHERE id = ? AND user_id = ?").get(sessionData.agentId, dbUserId) as any;
+    
+    if (agent) {
+      const currentUsdtBalance = await getUSDTBalance(agent.escrow_address);
+      const availableBalance = parseFloat(currentUsdtBalance);
+      
+      if (customAmount > availableBalance) {
+        return ctx.reply(
+          `❌ **Insufficient Balance**\n\n` +
+          `You entered: **${customAmount} USDT**\n` +
+          `Available balance: **${availableBalance} USDT**\n\n` +
+          `Please enter an amount you can afford.`,
+          { parse_mode: "Markdown" }
+        );
+      }
+    }
+
+    if (customAmount > 10000) {
+      return ctx.reply(
+        "❌ **Amount Too Large**\n\n" +
+        "Please enter an amount less than 10,000 USDT.",
+        { parse_mode: "Markdown" }
+      );
+    }
+
+    console.log(`Custom amount input: ${customAmount} USDT for trade ${sessionData.tradeId}`);
+
+    // Update trade data with custom amount
+    
+    // Get the original trade decision to access entry price
+    const originalTd = tradeDataStore.get(sessionData.tradeId);
+    if (!originalTd) {
+      return ctx.reply("❌ Trade data expired. Please try again.");
+    }
+    
+    // Calculate new token amount: customAmount / entryPrice
+    const entryPrice = sessionData.originalTradeData.usdt_cost / sessionData.originalTradeData.token_amount; // Back-calculate entry price
+    const newTokenAmount = customAmount / entryPrice;
+    
+    const updatedTradeData = {
+      ...sessionData.originalTradeData,
+      usdt_cost: customAmount,
+      token_amount: newTokenAmount
+    };
+
+    // Update the stored trade data
+    tradeDataStore.set(sessionData.tradeId, updatedTradeData);
+    
+    // Clear session
+    if (dbUserId) {
+      userSessions.delete(dbUserId);
+    }
+
+    // Calculate blockchain parameters for custom amount
+    const customTokenAmountWei = BigInt(Math.floor(updatedTradeData.token_amount * 10 ** 18));
+    const customUsdtCostWei = BigInt(Math.floor(customAmount * 10 ** 18));
+    
+    // Show confirmation with updated amount
+    const confirmationMessage = 
+      `✅ **FINAL CONFIRMATION - Custom Amount**\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      
+      `🎯 **Trade Execution Parameters:**\n` +
+      `• **Token:** ${updatedTradeData.token_symbol}\n` +
+      `• **Token Amount:** ${updatedTradeData.token_amount.toFixed(6)} ${updatedTradeData.token_symbol}\n` +
+      `• **💰 USDT Cost:** ${customAmount.toFixed(2)} USDT *(Your Custom Amount)*\n\n` +
+      
+      `📊 **Contract Parameters:**\n` +
+      `• **Token Amount (Wei):** ${customTokenAmountWei.toString()}\n` +
+      `• **USDT Cost (Wei):** ${customUsdtCostWei.toString()}\n\n` +
+      
+      `⚠️ **IMPORTANT WARNINGS:**\n` +
+      `• This trade will be executed on-chain immediately\n` +
+      `• Transaction cannot be reversed once confirmed\n` +
+      `• Small gas fees will apply for blockchain execution\n` +
+      `• USDT will be deducted from your agent's escrow\n\n` +
+      
+      `🚀 **Ready to execute with your custom amount?**`;
+
+    const keyboard = new InlineKeyboard()
+      .text("✅ Yes, Execute", `accept_trade_${sessionData.agentId}_${sessionData.tradeId}`)
+      .text("❌ Cancel", `decline_trade_${sessionData.agentId}_${sessionData.tradeId}`)
+      .row()
+      .text("🔙 Back to Agent", `agent_${sessionData.agentId}`);
+
+    return ctx.reply(confirmationMessage, {
+      reply_markup: keyboard,
+      parse_mode: "Markdown",
+    });
+  }
+
   if (session) {
     const userId = getUserId(telegramId);
     if (!userId) {
@@ -1095,7 +1234,9 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
       userPrompt += `\nPlease consider these declined trades when making new suggestions to better align with my preferences.`;
     }
 
-    const result = await tradingAgent.enhancedWorkflow(userPrompt);
+    const usdtBalance = await getUSDTBalance(agent.escrow_address);
+    const walletBalance = parseFloat(usdtBalance);
+    const result = await tradingAgent.enhancedWorkflow(userPrompt, walletBalance);
 
     await safeDeleteMessage(ctx, loadingMessage.message_id);
 
@@ -1137,6 +1278,19 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
       responseMessage += `• **Take Profit:** $${td.tp.toFixed(4)}\n`;
       responseMessage += `• **Confidence:** ${td.confidence}%\n\n`;
       responseMessage += `📊 **Analysis:**\n${td.message}\n\n`;
+      
+      // Add prominent USDT amount display
+      const usdtBalance = await getUSDTBalance(agent.escrow_address);
+      const walletBalance = parseFloat(usdtBalance);
+      const suggestedUsdtAmount = td.tradeAmount || Math.min(50, walletBalance * 0.5); // fallback: 50 USDT or 50% of balance
+      const calculatedTokenAmount = suggestedUsdtAmount / td.entry;
+      
+      console.log(`Trade suggestion display: AI tradeAmount=${td.tradeAmount}, Using=${suggestedUsdtAmount}, Balance=${walletBalance}`);
+      
+      responseMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      responseMessage += `💰 **🎯 SUGGESTED TRADE AMOUNT: ${suggestedUsdtAmount.toFixed(2)} USDT**\n`;
+      responseMessage += `📦 *Will purchase approximately ${calculatedTokenAmount.toFixed(6)} ${td.token.toUpperCase()}*\n`;
+      responseMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
     } else if (result.genericAdvice) {
       const ga = result.genericAdvice;
       tradeData = {
@@ -1166,21 +1320,50 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
 
     if (tradeData && tradeData.type === "tradeDecision") {
       const tradeId = generateTradeId();
-      tradeDataStore.set(tradeId, tradeData);
+      
+      // Update trade data with calculated amounts for execution
+      const td = tradeData.data;
+      const suggestedUsdtAmount = td.tradeAmount || Math.min(50, walletBalance * 0.5); // fallback: 50 USDT or 50% of balance
+      const calculatedTokenAmount = suggestedUsdtAmount / td.entry;
+      
+      console.log(`Trade data storage: AI tradeAmount=${td.tradeAmount}, Using=${suggestedUsdtAmount}, TokenAmount=${calculatedTokenAmount}`);
+      
+      const enhancedTradeData = {
+        type: "tradeDecision", // Required by execution handler
+        data: {
+          token: td.token.toUpperCase(),
+          entry: td.entry,
+          currentPrice: td.currentPrice,
+          sl: td.sl,
+          tp: td.tp,
+          message: td.message,
+          confidence: td.confidence,
+          tradeAmount: suggestedUsdtAmount
+        },
+        token_symbol: td.token.toUpperCase(),
+        token_amount: calculatedTokenAmount,
+        usdt_cost: suggestedUsdtAmount,
+        reasoning: td.message,
+        confidence: td.confidence,
+        agentId: agentId,
+        userId: userId,
+        timestamp: Date.now(),
+      };
+      
+      tradeDataStore.set(tradeId, enhancedTradeData);
 
       setTimeout(() => {
         tradeDataStore.delete(tradeId);
       }, 5 * 60 * 1000);
 
+      responseMessage += "🚀 **Choose your action:**";
+
       keyboard = new InlineKeyboard()
-        .text("✅ Accept Trade", `accept_trade_${agentId}_${tradeId}`)
-        .text("❌ Decline Trade", `decline_trade_${agentId}_${tradeId}`)
+        .text("✅ Accept Trade", `confirm_trade_${agentId}_${tradeId}`)
+        .text("💰 Custom Amount", `custom_amount_${agentId}_${tradeId}`)
         .row()
-        .text("🔄 Get Another Suggestion", `trade_suggestion_${agentId}`)
-        .row()
-        .text("🤖 Back to Agent", `agent_${agentId}`)
-        .row()
-        .text("🔙 Back to Agents", "my_agents");
+        .text("❌ Decline", `decline_trade_${tradeId}`)
+        .text("🔙 Back to Agent", `agent_${agentId}`);
     } else {
       keyboard = new InlineKeyboard()
         .text("🔄 Get Another Suggestion", `trade_suggestion_${agentId}`)
@@ -1600,6 +1783,11 @@ bot.callbackQuery(/^accept_trade_([a-z0-9]+)$/, async (ctx) => {
       );
     }
 
+    console.log(`=== EXECUTION HANDLER: accept_trade_([a-z0-9]+) ===`);
+    console.log(`TradeData:`, tradeData);
+    console.log(`Using token_amount: ${tradeData.token_amount}`);
+    console.log(`Using usdt_cost: ${tradeData.usdt_cost}`);
+    
     tradeDataStore.delete(tradeId);
 
     const loadingMessage = await ctx.reply(
@@ -1708,6 +1896,8 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
       return ctx.reply(`❌ Token ${tokenSymbol} not available for trading.`);
     }
 
+    console.log(`=== EXECUTION HANDLER: accept_trade_(\d+)_([a-z0-9]+) ===`);
+    
     const loadingMessage = await ctx.reply(
       "🔄 **Executing Trade...**\n\n" +
         `Buying ${tokenSymbol} tokens for your agent...\n\n` +
@@ -1715,9 +1905,32 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
       { parse_mode: "Markdown" }
     );
 
-    const tokenAmount = BigInt(Math.floor(100 * 10 ** 18));
-    const usdtCost = BigInt(Math.floor(td.entry * 100 * 10 ** 6));
+    // Use updated trade data amounts (custom amount takes priority), fallback to AI suggestion
+    const usdtAmount = tradeData.usdt_cost || td.tradeAmount || 50;
+    // Use updated token amount if available, otherwise calculate from USDT amount
+    const calculatedTokenAmount = tradeData.token_amount || (usdtAmount / td.entry);
+    
+    console.log(`=== Trade Execution Data ===`);
+    console.log(`AI suggested tradeAmount: ${td.tradeAmount}`);
+    console.log(`TradeData usdt_cost: ${tradeData.usdt_cost}`);
+    console.log(`TradeData token_amount: ${tradeData.token_amount}`);
+    console.log(`FINAL Using USDT amount: ${usdtAmount}`);
+    console.log(`FINAL Using token amount: ${calculatedTokenAmount}`);
+    console.log(`Entry price: ${td.entry}`);
+    
+    const tokenAmount = BigInt(Math.floor(calculatedTokenAmount * 10 ** 18));
+    const usdtCost = BigInt(Math.floor(usdtAmount * 10 ** 18));  // Use 18 decimals for USDT wei
+    
+    console.log(`Final tokenAmount (BigInt): ${tokenAmount}`);
+    console.log(`Final usdtCost (BigInt): ${usdtCost}`);
 
+    console.log(`=== Calling executeTrade ===`);
+    console.log(`agentId: ${agentId}, userId: ${userId}, tokenSymbol: ${tokenSymbol}`);
+    console.log(`tokenAmount (BigInt): ${tokenAmount}`);
+    console.log(`usdtCost (BigInt): ${usdtCost}`);
+    console.log(`tokenAmount (decimal): ${Number(tokenAmount) / 10**18}`);
+    console.log(`usdtCost (decimal): ${Number(usdtCost) / 10**18}`);
+    
     const result = await executeTrade(
       agentId,
       userId,
@@ -1743,9 +1956,9 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
           `🎯 **Trade Details:**\n` +
           `• **Token:** ${tokenSymbol}\n` +
           `• **Amount:** ${(Number(tokenAmount) / 10 ** 18).toFixed(
-            2
+            6
           )} ${tokenSymbol}\n` +
-          `• **Cost:** ${(Number(usdtCost) / 10 ** 6).toFixed(2)} USDT\n` +
+          `• **Cost:** ${(Number(usdtCost) / 10 ** 18).toFixed(6)} USDT\n` +
           `• **Transaction:** \`${result.txHash}\`\n\n` +
           `💡 The tokens have been added to your agent's balance.`,
         { reply_markup: keyboard, parse_mode: "Markdown" }
@@ -1785,9 +1998,15 @@ bot.callbackQuery(/^decline_trade_([a-z0-9]+)$/, async (ctx) => {
 
   const tradeId = ctx.match[1];
   const tradeData = tradeDataStore.get(tradeId);
+  const userId = getUserId(ctx.from?.id!);
 
   if (tradeData) {
     tradeDataStore.delete(tradeId);
+    
+    // Clear any active sessions for this user
+    if (userId) {
+      userSessions.delete(userId);
+    }
 
     const keyboard = new InlineKeyboard()
       .text("🔄 Try Again", `execute_trade_${tradeData.agentId}`)
@@ -1825,6 +2044,11 @@ bot.callbackQuery(/^decline_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
     );
 
     tradeDataStore.delete(tradeId);
+    
+    // Clear any active sessions for this user
+    if (userId) {
+      userSessions.delete(userId);
+    }
 
     const keyboard = new InlineKeyboard()
       .text("🔄 Get Another Suggestion", `trade_suggestion_${agentId}`)
@@ -1854,10 +2078,120 @@ bot.callbackQuery(/^decline_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
   }
 });
 
+// Confirmation dialog before executing trade
+bot.callbackQuery(/^confirm_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Preparing confirmation..." });
+
+  const agentId = parseInt(ctx.match[1]);
+  const tradeId = ctx.match[2];
+  const userId = getUserId(ctx.from?.id!);
+
+  if (!userId) {
+    return ctx.reply("User not found. Please use /start to register.");
+  }
+
+  const tradeData = tradeDataStore.get(tradeId);
+  if (!tradeData) {
+    return ctx.reply(
+      "❌ Trade data expired or not found. Please generate a new trade suggestion."
+    );
+  }
+
+  // Get the original trade decision for complete details
+  const originalTradeData = tradeDataStore.get(tradeId);
+  if (!originalTradeData) {
+    return ctx.reply("❌ Trade data expired. Please try again.");
+  }
+
+  // Calculate blockchain parameters
+  const tokenAmountWei = BigInt(Math.floor(tradeData.token_amount * 10 ** 18));
+  const usdtCostWei = BigInt(Math.floor(tradeData.usdt_cost * 10 ** 18));
+  
+  const confirmationMessage = 
+    `🔔 **FINAL CONFIRMATION**\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+    
+    `🎯 **Trade Execution Parameters:**\n` +
+    `• **Token:** ${tradeData.token_symbol}\n` +
+    `• **Token Amount:** ${tradeData.token_amount.toFixed(6)} ${tradeData.token_symbol}\n` +
+    `• **💰 USDT Cost:** ${tradeData.usdt_cost.toFixed(2)} USDT\n\n` +
+    
+    `📊 **Contract Parameters:**\n` +
+    `• **Token Amount (Wei):** ${tokenAmountWei.toString()}\n` +
+    `• **USDT Cost (Wei):** ${usdtCostWei.toString()}\n\n` +
+    
+    `⚠️ **IMPORTANT WARNINGS:**\n` +
+    `• This trade will be executed on-chain immediately\n` +
+    `• Transaction cannot be reversed once confirmed\n` +
+    `• Small gas fees will apply for blockchain execution\n` +
+    `• USDT will be deducted from your agent's escrow\n\n` +
+    
+    `🚀 **Ready to execute this trade?**`;
+
+  const keyboard = new InlineKeyboard()
+    .text("✅ Yes, Execute", `accept_trade_${agentId}_${tradeId}`)
+    .text("❌ Cancel", `decline_trade_${agentId}_${tradeId}`)
+    .row()
+    .text("🔙 Back to Agent", `agent_${agentId}`);
+
+  await ctx.reply(confirmationMessage, {
+    reply_markup: keyboard,
+    parse_mode: "Markdown",
+  });
+});
+
+// Custom amount handler
+bot.callbackQuery(/^custom_amount_(\d+)_([a-z0-9]+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Enter custom amount..." });
+
+  const agentId = parseInt(ctx.match[1]);
+  const tradeId = ctx.match[2];
+  const userId = getUserId(ctx.from?.id!);
+
+  if (!userId) {
+    return ctx.reply("User not found. Please use /start to register.");
+  }
+
+  const tradeData = tradeDataStore.get(tradeId);
+  if (!tradeData) {
+    return ctx.reply(
+      "❌ Trade data expired or not found. Please generate a new trade suggestion."
+    );
+  }
+
+  // Get database user ID for session storage
+  const dbUserId = getUserId(ctx.from?.id!);
+  if (!dbUserId) {
+    return ctx.reply("User not found. Please use /start to register.");
+  }
+
+  // Store session data for custom amount input
+  userSessions.set(dbUserId, {
+    step: "awaiting_custom_amount",
+    data: { agentId, tradeId, originalTradeData: tradeData }
+  });
+
+  const keyboard = new InlineKeyboard()
+    .text("❌ Cancel", `decline_trade_${agentId}_${tradeId}`)
+    .text("🔙 Back to Agent", `agent_${agentId}`);
+
+  await ctx.reply(
+    `💰 **Custom Amount Input**\n\n` +
+    `Current suggested amount: **${tradeData.usdt_cost.toFixed(2)} USDT**\n\n` +
+    `💬 **Please reply with your desired USDT amount:**\n` +
+    `Example: \`25\` or \`50.5\`\n\n` +
+    `⚠️ Make sure you have sufficient balance in your agent's escrow.`,
+    { reply_markup: keyboard, parse_mode: "Markdown" }
+  );
+});
+
+// Custom amount handler moved to first message handler
+
 bot.on("message:text", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
+  // Check for trade prompt session
   const userState = userStates.get(userId);
   if (!userState || userState.state !== "waiting_for_trade_prompt") {
     return;
@@ -1933,7 +2267,9 @@ bot.on("message:text", async (ctx) => {
 
 Available tokens: ${Object.keys(tokens).join(", ")}`;
 
-    const result = await tradingAgent.enhancedWorkflow(userPrompt);
+    const usdtBalance = await getUSDTBalance(agent.escrow_address);
+    const walletBalance = parseFloat(usdtBalance);
+    const result = await tradingAgent.enhancedWorkflow(userPrompt, walletBalance);
 
     await safeDeleteMessage(ctx, loadingMessage.message_id);
 
@@ -1957,20 +2293,42 @@ Available tokens: ${Object.keys(tokens).join(", ")}`;
     if (result.tradeDecision) {
       const td = result.tradeDecision;
 
+      console.log(`AI Trade Decision:`, {
+        token: td.token,
+        entry: td.entry,
+        tradeAmount: td.tradeAmount,
+        message: td.message
+      });
+
+      // Use AI's suggested trade amount in USDT, fallback to 50 USDT if not provided
+      const usdtAmount = td.tradeAmount || 50;
+      // Calculate token amount based on USDT amount and entry price
+      const tokenAmount = usdtAmount / td.entry;
+
+      console.log(`Trade calculation: ${usdtAmount} USDT / ${td.entry} = ${tokenAmount} tokens`);
+
       const tradeData = {
         token_symbol: td.token.toUpperCase(),
-        token_amount: Math.floor(td.entry * 1000),
-        usdt_cost: td.entry * Math.floor(td.entry * 1000),
+        token_amount: tokenAmount,
+        usdt_cost: usdtAmount,
         reasoning: td.message,
         confidence: td.confidence,
       };
 
       responseMessage += `🎯 **Recommended Trade:**\n`;
       responseMessage += `• **Token:** ${tradeData.token_symbol}\n`;
-      responseMessage += `• **Amount:** ${tradeData.token_amount} tokens\n`;
-      responseMessage += `• **Cost:** ${tradeData.usdt_cost.toFixed(2)} USDT\n`;
-      responseMessage += `• **Confidence:** ${tradeData.confidence}/100\n\n`;
-      responseMessage += `💡 **Reasoning:**\n${tradeData.reasoning}\n\n`;
+      responseMessage += `• **Entry Price:** $${td.entry.toFixed(4)}\n`;
+      responseMessage += `• **Current Price:** $${td.currentPrice.toFixed(4)}\n`;
+      responseMessage += `• **Stop Loss:** $${td.sl.toFixed(4)}\n`;
+      responseMessage += `• **Take Profit:** $${td.tp.toFixed(4)}\n`;
+      responseMessage += `• **Confidence:** ${tradeData.confidence}%\n\n`;
+      
+      responseMessage += `📊 **Analysis:**\n${tradeData.reasoning}\n\n`;
+      
+      responseMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      responseMessage += `💰 **🎯 SUGGESTED TRADE AMOUNT: ${tradeData.usdt_cost.toFixed(2)} USDT**\n`;
+      responseMessage += `📦 *Will purchase approximately ${tradeData.token_amount.toFixed(6)} ${tradeData.token_symbol}*\n`;
+      responseMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
       const tradeId = generateTradeId();
       tradeDataStore.set(tradeId, {
@@ -1980,12 +2338,13 @@ Available tokens: ${Object.keys(tokens).join(", ")}`;
         timestamp: Date.now(),
       });
 
-      responseMessage += "🚀 **Ready to execute this trade?**";
+      responseMessage += "🚀 **Choose your action:**";
 
       const keyboard = new InlineKeyboard()
-        .text("✅ Execute Now", `accept_trade_${tradeId}`)
-        .text("❌ Cancel", `decline_trade_${tradeId}`)
+        .text("✅ Accept Trade", `confirm_trade_${agentId}_${tradeId}`)
+        .text("💰 Custom Amount", `custom_amount_${agentId}_${tradeId}`)
         .row()
+        .text("❌ Decline", `decline_trade_${tradeId}`)
         .text("🔙 Back to Agent", `agent_${agentId}`);
 
       await ctx.reply(responseMessage, {

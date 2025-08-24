@@ -3,7 +3,10 @@
     "db:generate": "bun run data/migrations/generate.ts",
     "db:migrate": "bun run data/migrations/migrate.ts",
     "db:push": "bun db:generate; bun db:migrate",
-    "server:dev": "bun run src/server/index.ts --watch"
+    "server:dev": "bun run src/server/index.ts --watch",
+    "client:dev": "cd src/client && bun dev",
+    "client:build": "cd src/client && bun build",
+    "client:start": "cd src/client && bun start"
   },
   "workspaces": [
     "./evm",
