@@ -12,8 +12,11 @@ import { hardhat } from "viem/chains";
 
 export const bot = new Bot(env.TG_BOT_TOKEN!);
 
-// In-memory store for trade data (in production, use Redis or database)
 const tradeDataStore = new Map<string, any>();
+const userStates = new Map<
+  number,
+  { state: string; agentId?: number; timestamp: number }
+>();
 
 function generateTradeId(): string {
   return Math.random().toString(36).substring(2, 15);
@@ -23,7 +26,6 @@ async function safeDeleteMessage(ctx: any, messageId: number): Promise<void> {
   try {
     await ctx.api.deleteMessage(ctx.chat?.id!, messageId);
   } catch (error) {
-    // Message might have been deleted already or doesn't exist
     console.log(
       `Could not delete message ${messageId}:`,
       error instanceof Error ? error.message : "Unknown error"
@@ -52,20 +54,16 @@ async function executeTrade(
       return { success: false, error: "Agent not found" };
     }
 
-    // Step 1: Set up USDT contract reference
     const usdtContract = {
       address: definitions.USDT!.address as viem.Address,
       abi: definitions.USDT!.abi,
     } as const;
 
-    // Get the actor client for transaction execution
     const seed = `${userId}_${agent.agent_name}`;
     const actorClient = await deriveActor(seed);
 
-    // The escrow address is where users fund USDT
     const escrowAddress = agent.escrow_address as viem.Address;
 
-    // Step 2: Check if escrow has enough USDT balance
     const escrowUsdtBalance = await actorClient.readContract({
       address: usdtContract.address,
       abi: usdtContract.abi,
@@ -84,14 +82,12 @@ async function executeTrade(
       };
     }
 
-    // Step 3: Check if actor has enough SEI for gas
     const actorSeiBalance = await actorClient.getBalance({
       address: actorClient.account.address,
     });
 
-    // Estimate minimum SEI needed for gas (roughly 0.001 SEI should be enough for most transactions)
-    const minSeiForGas = BigInt(1000000000000000); // 0.001 SEI in wei
-    
+    const minSeiForGas = BigInt(1000000000000000);
+
     if (actorSeiBalance < minSeiForGas) {
       return {
         success: false,
@@ -103,7 +99,6 @@ async function executeTrade(
       };
     }
 
-    // Step 4: Fund the actor from escrow
     const escrowContract = {
       address: escrowAddress,
       abi: [
@@ -129,7 +124,6 @@ async function executeTrade(
 
     await actorClient.waitForTransactionReceipt({ hash: fundActorHash });
 
-    // Step 5: Check current allowance for the token contract
     const currentAllowance = await actorClient.readContract({
       address: usdtContract.address,
       abi: usdtContract.abi,
@@ -137,7 +131,6 @@ async function executeTrade(
       args: [actorClient.account.address, tokenContract.address],
     });
 
-    // Step 6: If allowance is insufficient, approve the token contract
     if (currentAllowance < usdtCost) {
       const approveHash = await actorClient.writeContract({
         address: usdtContract.address,
@@ -146,11 +139,9 @@ async function executeTrade(
         args: [tokenContract.address, usdtCost],
       });
 
-      // Wait for approval transaction to be mined
       await actorClient.waitForTransactionReceipt({ hash: approveHash });
     }
 
-    // Step 7: Execute the buy function
     const hash = await actorClient.writeContract({
       address: tokenContract.address as viem.Address,
       abi: tokenContract.abi,
@@ -219,13 +210,19 @@ async function getSEIBalance(address: string): Promise<string> {
   }
 }
 
-async function getActorAddress(userId: number, agentName: string): Promise<string> {
+async function getActorAddress(
+  userId: number,
+  agentName: string
+): Promise<string> {
   const seed = `${userId}_${agentName}`;
   const actorClient = await deriveActor(seed);
   return actorClient.account.address;
 }
 
-async function getActorSEIBalance(userId: number, agentName: string): Promise<string> {
+async function getActorSEIBalance(
+  userId: number,
+  agentName: string
+): Promise<string> {
   try {
     const actorAddress = await getActorAddress(userId, agentName);
     return await getSEIBalance(actorAddress);
@@ -840,7 +837,6 @@ bot.on("message:text", async (ctx) => {
       }
 
       try {
-        // Use deterministic seed so we can always recreate the same address
         const agentSeed = `${userId}_${session.data.agentName}`;
         const actor = await deriveActor(agentSeed);
         const escrowAddress = actor.account.address;
@@ -967,6 +963,8 @@ bot.callbackQuery(/^agent_(\d+)$/, async (ctx) => {
 
   const keyboard = new InlineKeyboard()
     .text("🤖 Trade Suggestion", `trade_suggestion_${agentId}`)
+    .text("⚡ Execute Trade", `execute_trade_${agentId}`)
+    .row()
     .text("💰 Agent Balance", `agent_balance_${agentId}`)
     .row()
     .text("🗑️ Delete Agent", `delete_agent_${agentId}`)
@@ -1010,50 +1008,51 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
     );
   }
 
-  // Check funding status before generating trade suggestion
   try {
     const usdtBalance = await getUSDTBalance(agent.escrow_address);
     const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
-    
+
     const hasUsdt = parseFloat(usdtBalance) > 0;
     const hasSei = parseFloat(actorSeiBalance) > 0;
-    
+
     if (!hasUsdt || !hasSei) {
       const actorAddress = await getActorAddress(userId, agent.agent_name);
-      
+
       let message = "❌ **Cannot generate trade suggestion**\n\n";
       message += "Your agent needs both USDT and SEI to execute trades:\n\n";
-      
+
       if (!hasUsdt) {
         message += `🏦 **Missing USDT** in escrow\n`;
         message += `Send USDT to: \`${agent.escrow_address}\`\n\n`;
       } else {
         message += `✅ USDT available in escrow: ${usdtBalance} USDT\n\n`;
       }
-      
+
       if (!hasSei) {
         message += `⚡ **Missing SEI** for gas fees\n`;
         message += `Send SEI to: \`${actorAddress}\`\n\n`;
       } else {
         message += `✅ SEI available for gas: ${actorSeiBalance} SEI\n\n`;
       }
-      
+
       message += "💡 Use the 'Fund Agent' button to get funding instructions.";
-      
+
       const keyboard = new InlineKeyboard()
         .text("💸 Fund Agent", `fund_agent_${agentId}`)
         .text("💰 Check Balance", `agent_balance_${agentId}`)
         .row()
         .text("🔙 Back to Agent", `agent_${agentId}`);
-      
-      return ctx.reply(message, { 
-        reply_markup: keyboard, 
-        parse_mode: "Markdown" 
+
+      return ctx.reply(message, {
+        reply_markup: keyboard,
+        parse_mode: "Markdown",
       });
     }
   } catch (error) {
     console.error("Error checking agent funding:", error);
-    return ctx.reply("❌ Error checking agent funding status. Please try again.");
+    return ctx.reply(
+      "❌ Error checking agent funding status. Please try again."
+    );
   }
 
   try {
@@ -1069,7 +1068,6 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
       preamble: `You are a professional cryptocurrency trading agent with specific user instructions.`,
     });
 
-    // Get declined trades for context
     const declinedTrades = db
       .query(
         "SELECT trade_data FROM declined_trades WHERE user_id = ? AND agent_id = ? ORDER BY declined_at DESC LIMIT 5"
@@ -1092,9 +1090,7 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
               100
             )}...)\n`;
           }
-        } catch (e) {
-          // Skip invalid trade data
-        }
+        } catch (e) {}
       });
       userPrompt += `\nPlease consider these declined trades when making new suggestions to better align with my preferences.`;
     }
@@ -1169,11 +1165,9 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
     let keyboard: InlineKeyboard;
 
     if (tradeData && tradeData.type === "tradeDecision") {
-      // Store trade data with a short ID instead of encoding in button
       const tradeId = generateTradeId();
       tradeDataStore.set(tradeId, tradeData);
 
-      // Set expiration for trade data (5 minutes)
       setTimeout(() => {
         tradeDataStore.delete(tradeId);
       }, 5 * 60 * 1000);
@@ -1216,6 +1210,96 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
       { reply_markup: keyboard, parse_mode: "Markdown" }
     );
   }
+});
+
+bot.callbackQuery(/^execute_trade_(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+
+  const agentId = parseInt(ctx.match[1]);
+  const userId = getUserId(ctx.from?.id!);
+
+  if (!userId) {
+    return ctx.reply("User not found. Please use /start to register.");
+  }
+
+  const agent = db
+    .query("SELECT * FROM user_agents WHERE id = ? AND user_id = ?")
+    .get(agentId, userId) as any;
+
+  if (!agent) {
+    return ctx.reply(
+      "❌ Agent not found or you don't have permission to access it."
+    );
+  }
+
+  try {
+    const usdtBalance = await getUSDTBalance(agent.escrow_address);
+    const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
+
+    const hasUsdt = parseFloat(usdtBalance) > 0;
+    const hasSei = parseFloat(actorSeiBalance) > 0;
+
+    if (!hasUsdt || !hasSei) {
+      const actorAddress = await getActorAddress(userId, agent.agent_name);
+
+      let message = "❌ **Cannot execute trade**\n\n";
+      message += "Your agent needs both USDT and SEI to execute trades:\n\n";
+
+      if (!hasUsdt) {
+        message += `🏦 **Missing USDT** in escrow\n`;
+        message += `Send USDT to: \`${agent.escrow_address}\`\n\n`;
+      } else {
+        message += `✅ USDT available in escrow: ${usdtBalance} USDT\n\n`;
+      }
+
+      if (!hasSei) {
+        message += `⚡ **Missing SEI** for gas fees\n`;
+        message += `Send SEI to: \`${actorAddress}\`\n\n`;
+      } else {
+        message += `✅ SEI available for gas: ${actorSeiBalance} SEI\n\n`;
+      }
+
+      message += "💡 Use the 'Fund Agent' button to get funding instructions.";
+
+      const keyboard = new InlineKeyboard()
+        .text("💸 Fund Agent", `fund_agent_${agentId}`)
+        .text("💰 Check Balance", `agent_balance_${agentId}`)
+        .row()
+        .text("🔙 Back to Agent", `agent_${agentId}`);
+
+      return ctx.reply(message, {
+        reply_markup: keyboard,
+        parse_mode: "Markdown",
+      });
+    }
+  } catch (error) {
+    console.error("Error checking agent funding:", error);
+    return ctx.reply(
+      "❌ Error checking agent funding status. Please try again."
+    );
+  }
+
+  const keyboard = new InlineKeyboard().text("🔙 Cancel", `agent_${agentId}`);
+
+  await ctx.reply(
+    `⚡ **Execute Trade with ${agent.agent_name}**\n\n` +
+      `Please describe what you want to trade. Your prompt will take priority over the agent's base strategy.\n\n` +
+      `📝 **Examples:**\n` +
+      `• "Buy $50 worth of ETH"\n` +
+      `• "Sell half my PEPE tokens"\n` +
+      `• "Buy the most promising low-cap token under $1M market cap"\n\n` +
+      `💡 **Type your trade request:**`,
+    {
+      reply_markup: keyboard,
+      parse_mode: "Markdown",
+    }
+  );
+
+  userStates.set(ctx.from!.id, {
+    state: "waiting_for_trade_prompt",
+    agentId: agentId,
+    timestamp: Date.now(),
+  });
 });
 
 bot.callbackQuery(/^delete_agent_(\d+)$/, async (ctx) => {
@@ -1295,7 +1379,7 @@ bot.callbackQuery(/^fund_agent_(\d+)$/, async (ctx) => {
 
   const escrowAddress = agent.escrow_address;
   const actorAddress = await getActorAddress(userId, agent.agent_name);
-  
+
   const escrowQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${escrowAddress}`;
   const actorQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${actorAddress}`;
 
@@ -1329,69 +1413,78 @@ bot.callbackQuery(/^fund_agent_(\d+)$/, async (ctx) => {
   });
 });
 
-// QR Code handlers for funding
 bot.callbackQuery(/^escrow_qr_(\d+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
-  
+
   const agentId = parseInt(ctx.match[1]);
   const userId = getUserId(ctx.from?.id!);
-  
+
   if (!userId) return;
-  
+
   const agent = db
     .query("SELECT * FROM user_agents WHERE id = ? AND user_id = ?")
     .get(agentId, userId) as any;
-    
+
   if (!agent) return;
-  
+
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${agent.escrow_address}`;
-  
-  const keyboard = new InlineKeyboard()
-    .text("🔙 Back to Funding", `fund_agent_${agentId}`);
-    
+
+  const keyboard = new InlineKeyboard().text(
+    "🔙 Back to Funding",
+    `fund_agent_${agentId}`
+  );
+
   try {
     await ctx.replyWithPhoto(qrCodeUrl, {
-      caption: `🏦 **Escrow Address QR Code**\n\n` +
-               `Send USDT to this address:\n\`${agent.escrow_address}\``,
+      caption:
+        `🏦 **Escrow Address QR Code**\n\n` +
+        `Send USDT to this address:\n\`${agent.escrow_address}\``,
       reply_markup: keyboard,
       parse_mode: "Markdown",
     });
   } catch (error) {
     console.error("Error sending escrow QR code:", error);
-    await ctx.reply("❌ Error generating QR code. Please copy the address manually.");
+    await ctx.reply(
+      "❌ Error generating QR code. Please copy the address manually."
+    );
   }
 });
 
 bot.callbackQuery(/^actor_qr_(\d+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
-  
+
   const agentId = parseInt(ctx.match[1]);
   const userId = getUserId(ctx.from?.id!);
-  
+
   if (!userId) return;
-  
+
   const agent = db
     .query("SELECT * FROM user_agents WHERE id = ? AND user_id = ?")
     .get(agentId, userId) as any;
-    
+
   if (!agent) return;
-  
+
   const actorAddress = await getActorAddress(userId, agent.agent_name);
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${actorAddress}`;
-  
-  const keyboard = new InlineKeyboard()
-    .text("🔙 Back to Funding", `fund_agent_${agentId}`);
-    
+
+  const keyboard = new InlineKeyboard().text(
+    "🔙 Back to Funding",
+    `fund_agent_${agentId}`
+  );
+
   try {
     await ctx.replyWithPhoto(qrCodeUrl, {
-      caption: `⚡ **Actor Address QR Code**\n\n` +
-               `Send SEI to this address:\n\`${actorAddress}\``,
+      caption:
+        `⚡ **Actor Address QR Code**\n\n` +
+        `Send SEI to this address:\n\`${actorAddress}\``,
       reply_markup: keyboard,
       parse_mode: "Markdown",
     });
   } catch (error) {
     console.error("Error sending actor QR code:", error);
-    await ctx.reply("❌ Error generating QR code. Please copy the address manually.");
+    await ctx.reply(
+      "❌ Error generating QR code. Please copy the address manually."
+    );
   }
 });
 
@@ -1417,19 +1510,16 @@ bot.callbackQuery(/^agent_balance_(\d+)$/, async (ctx) => {
 
   try {
     const actorAddress = await getActorAddress(userId, agent.agent_name);
-    
-    // Get escrow balances (USDT and any tokens)
+
     const escrowBalances = await getAllTokenBalances(agent.escrow_address);
-    
-    // Get actor SEI balance
+
     const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
 
     let message = `💰 **${agent.agent_name} - Balances**\n\n`;
-    
+
     message += `🏦 **Escrow Address (USDT & Tokens):**\n\`${agent.escrow_address}\`\n\n`;
     message += `⚡ **Actor Address (Gas Fees):**\n\`${actorAddress}\`\n\n`;
 
-    // Show escrow balances
     message += `📊 **Escrow Balances (Trading Funds):**\n`;
     if (escrowBalances.length === 0) {
       message += `� No tokens in escrow\n`;
@@ -1438,15 +1528,15 @@ bot.callbackQuery(/^agent_balance_(\d+)$/, async (ctx) => {
         message += `• **${token.symbol}**: \`${token.balance}\`\n`;
       });
     }
-    
-    // Show actor balance
+
     message += `\n⛽ **Actor Balance (Gas Fees):**\n`;
     message += `• **SEI**: \`${actorSeiBalance}\`\n\n`;
-    
-    // Funding status
-    const hasUsdt = escrowBalances.some(b => b.symbol === 'USDT' && parseFloat(b.balance) > 0);
+
+    const hasUsdt = escrowBalances.some(
+      (b) => b.symbol === "USDT" && parseFloat(b.balance) > 0
+    );
     const hasSei = parseFloat(actorSeiBalance) > 0;
-    
+
     if (hasUsdt && hasSei) {
       message += `✅ **Ready for trading!** Both USDT and SEI are available.`;
     } else if (!hasUsdt && !hasSei) {
@@ -1482,6 +1572,100 @@ bot.callbackQuery(/^agent_balance_(\d+)$/, async (ctx) => {
   }
 });
 
+bot.callbackQuery(/^accept_trade_([a-z0-9]+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Processing trade..." });
+
+  const tradeId = ctx.match[1];
+  const userId = getUserId(ctx.from?.id!);
+
+  if (!userId) {
+    return ctx.reply("User not found. Please use /start to register.");
+  }
+
+  const tradeData = tradeDataStore.get(tradeId);
+  if (!tradeData) {
+    return ctx.reply(
+      "❌ Trade data expired or not found. Please generate a new trade suggestion."
+    );
+  }
+
+  try {
+    const agent = db
+      .query("SELECT * FROM user_agents WHERE id = ? AND user_id = ?")
+      .get(tradeData.agentId, userId) as any;
+
+    if (!agent) {
+      return ctx.reply(
+        "❌ Agent not found or you don't have permission to access it."
+      );
+    }
+
+    tradeDataStore.delete(tradeId);
+
+    const loadingMessage = await ctx.reply(
+      "⚡ **Executing Trade...**\n\n" +
+        `Token: ${tradeData.token_symbol}\n` +
+        `Amount: ${tradeData.token_amount}\n` +
+        `Cost: ${tradeData.usdt_cost} USDT\n\n` +
+        "🔄 Processing transaction...",
+      { parse_mode: "Markdown" }
+    );
+
+    const result = await executeTrade(
+      userId,
+      agent,
+      tradeData.token_symbol,
+      tradeData.token_amount,
+      BigInt(Math.floor(tradeData.usdt_cost * 1000000))
+    );
+
+    await safeDeleteMessage(ctx, loadingMessage.message_id);
+
+    if (result.success) {
+      const keyboard = new InlineKeyboard()
+        .text("🎉 View Transaction", `view_tx_${result.txHash}`)
+        .row()
+        .text("💰 View Balance", `agent_balance_${tradeData.agentId}`)
+        .text("🤖 Back to Agent", `agent_${tradeData.agentId}`);
+
+      await ctx.reply(
+        "✅ **Trade Executed Successfully!**\n\n" +
+          `🎯 **Token:** ${tradeData.token_symbol}\n` +
+          `📦 **Amount:** ${tradeData.token_amount} tokens\n` +
+          `💰 **Cost:** ${tradeData.usdt_cost} USDT\n\n` +
+          `🔗 **Transaction Hash:**\n\`${result.txHash}\`\n\n` +
+          "🎉 Your trade has been executed successfully!",
+        { reply_markup: keyboard, parse_mode: "Markdown" }
+      );
+    } else {
+      const keyboard = new InlineKeyboard()
+        .text("🔄 Try Again", `execute_trade_${tradeData.agentId}`)
+        .text("💰 Check Balance", `agent_balance_${tradeData.agentId}`)
+        .row()
+        .text("🤖 Back to Agent", `agent_${tradeData.agentId}`);
+
+      await ctx.reply(
+        "❌ **Trade Execution Failed**\n\n" +
+          `Error: ${result.error}\n\n` +
+          "Please check your agent's USDT balance and try again.",
+        { reply_markup: keyboard, parse_mode: "Markdown" }
+      );
+    }
+  } catch (error) {
+    console.error("Error executing trade:", error);
+
+    const keyboard = new InlineKeyboard()
+      .text("🔄 Try Again", `execute_trade_${tradeData.agentId}`)
+      .text("🤖 Back to Agent", `agent_${tradeData.agentId}`);
+
+    await ctx.reply(
+      "❌ **Error executing trade**\n\n" +
+        "There was an unexpected error. Please try again.",
+      { reply_markup: keyboard, parse_mode: "Markdown" }
+    );
+  }
+});
+
 bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
   await ctx.answerCallbackQuery({ text: "Processing trade..." });
 
@@ -1493,7 +1677,6 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
     return ctx.reply("User not found. Please use /start to register.");
   }
 
-  // Get trade data from store
   const tradeData = tradeDataStore.get(tradeId);
   if (!tradeData) {
     return ctx.reply(
@@ -1521,7 +1704,6 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
     const td = tradeData.data;
     const tokenSymbol = td.token.toUpperCase();
 
-    // Check if token exists in our definitions
     if (!definitions.tokens || !definitions.tokens[tokenSymbol]) {
       return ctx.reply(`❌ Token ${tokenSymbol} not available for trading.`);
     }
@@ -1533,9 +1715,8 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
       { parse_mode: "Markdown" }
     );
 
-    // Execute the trade
-    const tokenAmount = BigInt(Math.floor(100 * 10 ** 18)); // 100 tokens for demo
-    const usdtCost = BigInt(Math.floor(td.entry * 100 * 10 ** 6)); // USDT has 6 decimals
+    const tokenAmount = BigInt(Math.floor(100 * 10 ** 18));
+    const usdtCost = BigInt(Math.floor(td.entry * 100 * 10 ** 6));
 
     const result = await executeTrade(
       agentId,
@@ -1548,7 +1729,6 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
     await safeDeleteMessage(ctx, loadingMessage.message_id);
 
     if (result.success) {
-      // Remove trade data from store since it's been processed
       tradeDataStore.delete(tradeId);
 
       const keyboard = new InlineKeyboard()
@@ -1600,6 +1780,28 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
   }
 });
 
+bot.callbackQuery(/^decline_trade_([a-z0-9]+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Trade cancelled" });
+
+  const tradeId = ctx.match[1];
+  const tradeData = tradeDataStore.get(tradeId);
+
+  if (tradeData) {
+    tradeDataStore.delete(tradeId);
+
+    const keyboard = new InlineKeyboard()
+      .text("🔄 Try Again", `execute_trade_${tradeData.agentId}`)
+      .text("🤖 Back to Agent", `agent_${tradeData.agentId}`);
+
+    await ctx.reply(
+      "❌ **Trade Cancelled**\n\n" + "Your trade execution has been cancelled.",
+      { reply_markup: keyboard, parse_mode: "Markdown" }
+    );
+  } else {
+    await ctx.reply("Trade data not found or already expired.");
+  }
+});
+
 bot.callbackQuery(/^decline_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
   await ctx.answerCallbackQuery({ text: "Trade declined" });
 
@@ -1611,20 +1813,17 @@ bot.callbackQuery(/^decline_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
     return ctx.reply("User not found. Please use /start to register.");
   }
 
-  // Get trade data from store
   const tradeData = tradeDataStore.get(tradeId);
   if (!tradeData) {
     return ctx.reply("❌ Trade data expired or not found.");
   }
 
   try {
-    // Store declined trade in database
     db.run(
       "INSERT INTO declined_trades (user_id, agent_id, trade_data) VALUES (?, ?, ?)",
       [userId, agentId, JSON.stringify(tradeData)]
     );
 
-    // Remove trade data from store since it's been processed
     tradeDataStore.delete(tradeId);
 
     const keyboard = new InlineKeyboard()
@@ -1651,6 +1850,170 @@ bot.callbackQuery(/^decline_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
           `agent_${agentId}`
         ),
       }
+    );
+  }
+});
+
+bot.on("message:text", async (ctx) => {
+  const userId = ctx.from?.id;
+  if (!userId) return;
+
+  const userState = userStates.get(userId);
+  if (!userState || userState.state !== "waiting_for_trade_prompt") {
+    return;
+  }
+
+  if (Date.now() - userState.timestamp > 5 * 60 * 1000) {
+    userStates.delete(userId);
+    return ctx.reply("⏰ Trade prompt session expired. Please try again.");
+  }
+
+  const tradePrompt = ctx.message.text.trim();
+  const agentId = userState.agentId!;
+
+  userStates.delete(userId);
+
+  const dbUserId = getUserId(userId);
+  if (!dbUserId) {
+    return ctx.reply("User not found. Please use /start to register.");
+  }
+
+  const agent = db
+    .query("SELECT * FROM user_agents WHERE id = ? AND user_id = ?")
+    .get(agentId, dbUserId) as any;
+
+  if (!agent) {
+    return ctx.reply("❌ Agent not found or session expired.");
+  }
+
+  try {
+    const loadingMessage = await ctx.reply(
+      "⚡ **Executing Trade...**\n\n" +
+        `Your agent is analyzing your request: "${tradePrompt}"\n\n` +
+        "⏳ Generating trade suggestion and executing...",
+      { parse_mode: "Markdown" }
+    );
+
+    const tradingAgent = new Agent({
+      model: "gemini-2.0-flash",
+      preamble: `You are a professional cryptocurrency trading agent with specific user instructions.`,
+    });
+
+    let userPrompt = `URGENT TRADE REQUEST: "${tradePrompt}"\n\n`;
+    userPrompt += `This is a direct trade execution request that takes PRIORITY over my base strategy.\n\n`;
+    userPrompt += `My base strategy for context: "${agent.instructions}"\n\n`;
+    userPrompt += `Please generate a specific trade suggestion based on the urgent request above, using the base strategy only for additional context if needed.\n\n`;
+
+    const declinedTrades = db
+      .query(
+        "SELECT trade_data FROM declined_trades WHERE user_id = ? AND agent_id = ? ORDER BY declined_at DESC LIMIT 3"
+      )
+      .all(dbUserId, agentId) as any[];
+
+    if (declinedTrades.length > 0) {
+      userPrompt += `\nFor context, here are some recent trade suggestions I declined (avoid similar trades):\n`;
+      declinedTrades.forEach((decline, index) => {
+        try {
+          const tradeData = JSON.parse(decline.trade_data);
+          userPrompt += `${index + 1}. ${tradeData.token_symbol} - ${
+            tradeData.reasoning
+          }\n`;
+        } catch (e) {}
+      });
+    }
+
+    userPrompt += `\nReturn ONLY a JSON object with this exact structure:
+{
+  "token_symbol": "TOKEN_NAME",
+  "token_amount": number,
+  "usdt_cost": number,
+  "reasoning": "Brief explanation of why this trade fits the urgent request",
+  "confidence": number_between_1_and_10
+}
+
+Available tokens: ${Object.keys(tokens).join(", ")}`;
+
+    const result = await tradingAgent.enhancedWorkflow(userPrompt);
+
+    await safeDeleteMessage(ctx, loadingMessage.message_id);
+
+    if (result.error) {
+      return ctx.reply(
+        `❌ **Error generating trade for your request:**\n\n${result.error}\n\nPlease try again later.`,
+        {
+          reply_markup: new InlineKeyboard().text(
+            "🔙 Back to Agent",
+            `agent_${agentId}`
+          ),
+          parse_mode: "Markdown",
+        }
+      );
+    }
+
+    let responseMessage = `⚡ **Trade Execution for "${tradePrompt}"**\n\n`;
+    responseMessage += `🤖 **Agent:** ${agent.agent_name}\n`;
+    responseMessage += `📝 **Your Request:** ${tradePrompt}\n\n`;
+
+    if (result.tradeDecision) {
+      const td = result.tradeDecision;
+
+      const tradeData = {
+        token_symbol: td.token.toUpperCase(),
+        token_amount: Math.floor(td.entry * 1000),
+        usdt_cost: td.entry * Math.floor(td.entry * 1000),
+        reasoning: td.message,
+        confidence: td.confidence,
+      };
+
+      responseMessage += `🎯 **Recommended Trade:**\n`;
+      responseMessage += `• **Token:** ${tradeData.token_symbol}\n`;
+      responseMessage += `• **Amount:** ${tradeData.token_amount} tokens\n`;
+      responseMessage += `• **Cost:** ${tradeData.usdt_cost.toFixed(2)} USDT\n`;
+      responseMessage += `• **Confidence:** ${tradeData.confidence}/100\n\n`;
+      responseMessage += `💡 **Reasoning:**\n${tradeData.reasoning}\n\n`;
+
+      const tradeId = generateTradeId();
+      tradeDataStore.set(tradeId, {
+        ...tradeData,
+        agentId: agentId,
+        userId: dbUserId,
+        timestamp: Date.now(),
+      });
+
+      responseMessage += "🚀 **Ready to execute this trade?**";
+
+      const keyboard = new InlineKeyboard()
+        .text("✅ Execute Now", `accept_trade_${tradeId}`)
+        .text("❌ Cancel", `decline_trade_${tradeId}`)
+        .row()
+        .text("🔙 Back to Agent", `agent_${agentId}`);
+
+      await ctx.reply(responseMessage, {
+        reply_markup: keyboard,
+        parse_mode: "Markdown",
+      });
+    } else {
+      const keyboard = new InlineKeyboard()
+        .text("🔄 Try Again", `execute_trade_${agentId}`)
+        .text("🔙 Back to Agent", `agent_${agentId}`);
+
+      await ctx.reply(
+        "❌ **No trade suggestion generated**\n\n" +
+          "The agent couldn't generate a suitable trade for your request. Please try with a different prompt.",
+        { reply_markup: keyboard, parse_mode: "Markdown" }
+      );
+    }
+  } catch (error) {
+    console.error("Error executing trade:", error);
+
+    const keyboard = new InlineKeyboard()
+      .text("🔄 Try Again", `execute_trade_${agentId}`)
+      .text("🔙 Back to Agent", `agent_${agentId}`);
+
+    await ctx.reply(
+      "❌ **Error executing trade**\n\n" +
+        "There was an error processing your trade request. Please try again in a moment.",
+      { reply_markup: keyboard, parse_mode: "Markdown" }
     );
   }
 });
