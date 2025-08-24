@@ -10,6 +10,117 @@ import * as viem from "viem";
 
 export const bot = new Bot(env.TG_BOT_TOKEN!);
 
+// Add global error handler to prevent server crashes
+bot.catch((err) => {
+  console.error("Bot error:", err);
+  
+  // Try to send a user-friendly error message if possible
+  if (err.ctx && err.ctx.reply) {
+    try {
+      const keyboard = new InlineKeyboard()
+        .text("📊 Main Menu", "back_to_menu")
+        .row()
+        .text("🤖 My Agents", "my_agents");
+      
+      err.ctx.reply(
+        "🚨 **System Error**\n\n" +
+        "Sorry, something went wrong. Please try again in a moment.",
+        { 
+          reply_markup: keyboard, 
+          parse_mode: "Markdown" 
+        }
+      ).catch(() => {
+        // If Markdown fails, try without formatting
+        err.ctx.reply(
+          "System Error: Sorry, something went wrong. Please try again in a moment.",
+          { reply_markup: keyboard }
+        ).catch(() => {
+          console.error("Failed to send error message to user");
+        });
+      });
+    } catch (replyError) {
+      console.error("Failed to send error message:", replyError);
+    }
+  }
+});
+
+// Helper function to safely format error messages for Telegram
+function formatErrorMessage(error: any): string {
+  // Log the full error details to console for debugging
+  console.error("Full error details:", error);
+  
+  // Handle specific error codes from Agent class
+  if (typeof error === 'string') {
+    switch (error) {
+      case 'API_QUOTA_EXCEEDED':
+        return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
+      case 'AI_SERVICE_UNAVAILABLE':
+        return "🔧 **AI Service Temporarily Unavailable**\n\nPlease try again in a moment.";
+      case 'SERVICE_UNAVAILABLE':
+        return "⚠️ **Service Temporarily Unavailable**\n\nPlease try again later.";
+    }
+    
+    // Check for JSON strings with quota errors
+    try {
+      const parsedError = JSON.parse(error);
+      if (parsedError?.error?.code === 429) {
+        return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
+      }
+    } catch {
+      // Not JSON, check for quota-related keywords
+      if (error.includes('quota') || error.includes('429') || error.includes('rate limit')) {
+        return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
+      }
+    }
+  }
+  
+  // Handle structured error objects
+  if (typeof error === 'object') {
+    // Direct error object with code 429
+    if (error?.error?.code === 429 || error?.code === 429) {
+      return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
+    }
+    
+    // Check for quota-related error messages
+    const errorMessage = error?.error?.message || error?.message || '';
+    if (typeof errorMessage === 'string' && 
+        (errorMessage.includes('quota') || errorMessage.includes('rate limit') || errorMessage.includes('429'))) {
+      return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
+    }
+  }
+  
+  // Return generic user-friendly message for any other errors
+  return "⚠️ **Service Temporarily Unavailable**\n\nPlease try again in a moment.";
+}
+
+// Helper function to safely send error replies
+async function safeErrorReply(ctx: any, errorMessage: string, keyboard?: any) {
+  try {
+    // First try with Markdown formatting
+    await ctx.reply(errorMessage, {
+      reply_markup: keyboard,
+      parse_mode: "Markdown"
+    });
+  } catch (markdownError) {
+    console.error("Markdown formatting failed, trying plain text:", markdownError);
+    try {
+      // If Markdown fails, try plain text without formatting
+      const plainMessage = errorMessage.replace(/\*\*([^*]+)\*\*/g, '$1'); // Remove bold formatting
+      await ctx.reply(plainMessage, {
+        reply_markup: keyboard
+      });
+    } catch (plainError) {
+      console.error("Failed to send error message:", plainError);
+      // Last resort - try without keyboard
+      try {
+        await ctx.reply("An error occurred. Please try again later.");
+      } catch (finalError) {
+        console.error("Complete failure to send error message:", finalError);
+      }
+    }
+  }
+}
+
 const tradeDataStore = new Map<string, any>();
 const userStates = new Map<
   number,
@@ -486,12 +597,18 @@ async function handleChatMessage(ctx: any, message: string): Promise<void> {
       .row()
       .text("📊 Main Menu", "back_to_menu");
 
-    await ctx.reply(
-      "Hi! I'm your trading bot assistant. 🤖\n\n" +
-        "I can help you create trading agents, get recommendations, and execute trades.\n\n" +
-        "Use the buttons below to get started!",
-      { reply_markup: keyboard, parse_mode: "Markdown" }
-    );
+    // Check if it's an API quota error
+    let errorMessage = "Hi! I'm your trading bot assistant. 🤖\n\n" +
+      "I can help you create trading agents, get recommendations, and execute trades.\n\n" +
+      "Use the buttons below to get started!";
+    
+    if (error instanceof Error && error.message === "API_QUOTA_EXCEEDED") {
+      errorMessage = "🚫 **Chat Service Temporarily Limited**\n\n" +
+        "Our AI chat is temporarily at capacity. You can still use all trading features below!\n\n" +
+        "💡 **Available Features:**";
+    }
+    
+    await safeErrorReply(ctx, errorMessage, keyboard);
   }
 }
 
@@ -1072,11 +1189,10 @@ bot.on("message:text", async (ctx) => {
       .row()
       .text("📊 Main Menu", "back_to_menu");
 
-    await ctx.reply(
-      "Sorry, I had trouble understanding your message. 🤔\n\n" +
-        "You can use the buttons below to access the trading features!",
-      { reply_markup: keyboard, parse_mode: "Markdown" }
-    );
+    const errorMessage = "Sorry, I had trouble understanding your message. 🤔\n\n" +
+      "You can use the buttons below to access the trading features!";
+    
+    await safeErrorReply(ctx, errorMessage, keyboard);
   }
 });
 
@@ -1248,10 +1364,10 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
         .row()
         .text("🔙 Back to Agents", "my_agents");
 
-      return ctx.reply(
-        `❌ **Error generating trade suggestion:**\n\n${result.error}\n\nPlease try again later.`,
-        { reply_markup: keyboard, parse_mode: "Markdown" }
-      );
+      const formattedError = formatErrorMessage(result.error);
+      const errorMessage = `❌ **Error generating trade suggestion:**\n\n${formattedError}\n\nPlease try again later.`;
+      
+      return safeErrorReply(ctx, errorMessage, keyboard);
     }
 
     await safeDeleteMessage(ctx, loadingMessage.message_id);
@@ -1387,11 +1503,10 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
       .row()
       .text("🔙 Back to Agents", "my_agents");
 
-    await ctx.reply(
-      "❌ **Error generating trade suggestion**\n\n" +
-        "There was an error processing your request. Please try again in a moment.",
-      { reply_markup: keyboard, parse_mode: "Markdown" }
-    );
+    const formattedError = formatErrorMessage(error);
+    const errorMessage = "❌ **Error generating trade suggestion**\n\n" + formattedError;
+    
+    await safeErrorReply(ctx, errorMessage, keyboard);
   }
 });
 

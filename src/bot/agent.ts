@@ -96,30 +96,46 @@ export class Agent {
   }
 
   async prompt(input: string, schema?: z.ZodSchema) {
-    const contents = this.parsePrompt(input);
-    const res = await this.ai.models.generateContent({
-      model: this.model,
-      contents,
-      config: this.getConfig(),
-    });
+    try {
+      const contents = this.parsePrompt(input);
+      const res = await this.ai.models.generateContent({
+        model: this.model,
+        contents,
+        config: this.getConfig(),
+      });
 
-    if (this.responseJsonSchema) {
-      const jsonText = res.candidates?.[0].content?.parts
-        ?.map((part) => part.text)
-        .join("");
-      if (!jsonText) {
-        return {};
+      if (this.responseJsonSchema) {
+        const jsonText = res.candidates?.[0].content?.parts
+          ?.map((part) => part.text)
+          .join("");
+        if (!jsonText) {
+          return {};
+        }
+        const json = JSON.parse(jsonText);
+
+        if (schema) {
+          return this.safeParseWithZod(json, schema);
+        }
+
+        return json;
       }
-      const json = JSON.parse(jsonText);
 
-      if (schema) {
-        return this.safeParseWithZod(json, schema);
+      return res.candidates?.[0].content;
+    } catch (error) {
+      // Log the full error details for debugging
+      console.error("Google AI API error:", error);
+      
+      // Check if it's a quota/rate limit error
+      if (error && typeof error === 'object') {
+        const errorStr = JSON.stringify(error);
+        if (errorStr.includes('429') || errorStr.includes('quota') || errorStr.includes('RESOURCE_EXHAUSTED')) {
+          throw new Error("API_QUOTA_EXCEEDED");
+        }
       }
-
-      return json;
+      
+      // For other errors, throw a generic error
+      throw new Error("AI_SERVICE_UNAVAILABLE");
     }
-
-    return res.candidates?.[0].content;
   }
   async promptGuard(userPrompt: string): Promise<PromptGuardResult> {
     const currentTimestamp = new Date().toISOString();
@@ -328,10 +344,28 @@ export class Agent {
         tradeDecision,
       };
     } catch (error) {
+      // Log the full error details for debugging
+      console.error("Agent workflow error:", error);
+      
+      // Check for specific error types from the prompt method
+      if (error instanceof Error) {
+        if (error.message === "API_QUOTA_EXCEEDED") {
+          return {
+            guardResult: { valid: false, reason: "API quota exceeded" },
+            error: "API_QUOTA_EXCEEDED",
+          };
+        }
+        if (error.message === "AI_SERVICE_UNAVAILABLE") {
+          return {
+            guardResult: { valid: false, reason: "AI service unavailable" },
+            error: "AI_SERVICE_UNAVAILABLE",
+          };
+        }
+      }
+      
       return {
         guardResult: { valid: false, reason: "System error occurred" },
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        error: "SERVICE_UNAVAILABLE",
       };
     }
   }
@@ -525,10 +559,28 @@ export class Agent {
         tradeDecision,
       };
     } catch (error) {
+      // Log the full error details for debugging
+      console.error("Agent workflow error:", error);
+      
+      // Check for specific error types from the prompt method
+      if (error instanceof Error) {
+        if (error.message === "API_QUOTA_EXCEEDED") {
+          return {
+            guardResult: { valid: false, reason: "API quota exceeded" },
+            error: "API_QUOTA_EXCEEDED",
+          };
+        }
+        if (error.message === "AI_SERVICE_UNAVAILABLE") {
+          return {
+            guardResult: { valid: false, reason: "AI service unavailable" },
+            error: "AI_SERVICE_UNAVAILABLE",
+          };
+        }
+      }
+      
       return {
         guardResult: { valid: false, reason: "System error occurred" },
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        error: "SERVICE_UNAVAILABLE",
       };
     }
   }
