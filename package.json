@@ -6,7 +6,8 @@
     "server:dev": "bun run src/server/index.ts --watch"
   },
   "workspaces": [
-    "./evm"
+    "./evm",
+    "./src/client"
   ],
   "dependencies": {
     "@google/genai": "^1.14.0",
