@@ -3,6 +3,16 @@
 # Sei Trader
 Fast, precise, and intelligent AI-native trading agent, built on Sei.
 
+## Relevant Links:
+- Website: https://seitrader.hetairoi.xyz
+- Telegram Bot: http://t.me/seitraderofficialbot
+
+- Dorahacks: https://dorahacks.io/buidl/31702
+- X: https://x.com/SeiTrader
+
+- testUSDT Faucet: https://seitrader.hetairoi.xyz/faucet
+- Sei Faucet (Testnet): https://docs.sei.io/learn/faucet
+
 ## What is Sei Trader?
 Sei Trader is a sophisticated, AI-driven cryptocurrency trading bot specifically designed for the **Sei Network**. Built with an AI-first approach, it provides fast, precise, and intelligent trading capabilities leveraging the unique advantages of Sei's infrastructure.
 
