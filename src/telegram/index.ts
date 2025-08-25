@@ -20,7 +20,9 @@ bot.catch((err) => {
       const keyboard = new InlineKeyboard()
         .text("📊 Main Menu", "back_to_menu")
         .row()
-        .text("🤖 My Agents", "my_agents");
+        .text("🤖 My Agents", "my_agents")
+        .row()
+        .text("📚 Help & Resources", "help_resources");
       
       err.ctx.reply(
         "🚨 **System Error**\n\n" +
@@ -582,6 +584,8 @@ async function handleChatMessage(ctx: any, message: string): Promise<void> {
       .text("➕ New Agent", "add_agent")
       .row()
       .text("🪙 Token List", "token_list")
+      .text("📚 Help & Resources", "help_resources")
+      .row()
       .text("📊 Main Menu", "back_to_menu");
 
     await ctx.reply(
@@ -594,6 +598,8 @@ async function handleChatMessage(ctx: any, message: string): Promise<void> {
     const keyboard = new InlineKeyboard()
       .text("🤖 My Agents", "my_agents")
       .text("➕ New Agent", "add_agent")
+      .row()
+      .text("📚 Help & Resources", "help_resources")
       .row()
       .text("📊 Main Menu", "back_to_menu");
 
@@ -797,7 +803,9 @@ bot.callbackQuery("accept_tnc", async (ctx) => {
     .row()
     .text("➕ New Agent", "add_agent")
     .row()
-    .text("🪙 Token List", "token_list");
+    .text("🪙 Token List", "token_list")
+    .row()
+    .text("📚 Help & Resources", "help_resources");
 
   const welcomeMessage = `🤖 Welcome to Caret Trading bot on the Sei Network!`;
 
@@ -819,6 +827,8 @@ bot.callbackQuery("my_agents", async (ctx) => {
   if (agents.length === 0) {
     const keyboard = new InlineKeyboard()
       .text("➕ Create Your First Agent", "add_agent")
+      .row()
+      .text("📚 Help & Resources", "help_resources")
       .row()
       .text("🔙 Back to Menu", "back_to_menu");
 
@@ -858,6 +868,7 @@ bot.callbackQuery("my_agents", async (ctx) => {
     "⚠️ **Both USDT and SEI must be available for trades to execute!**\n\n";
 
   keyboard.text("➕ Add New Agent", "add_agent").row();
+  keyboard.text("📚 Help & Resources", "help_resources").row();
   keyboard.text("🔙 Back to Menu", "back_to_menu");
 
   await ctx.reply(message, { reply_markup: keyboard, parse_mode: "Markdown" });
@@ -893,7 +904,10 @@ bot.callbackQuery("token_list", async (ctx) => {
   message +=
     "💡 These are the tokens our trading agents can analyze and trade.\n";
 
-  const keyboard = new InlineKeyboard().text("🔙 Back to Menu", "back_to_menu");
+  const keyboard = new InlineKeyboard()
+    .text("📚 Help & Resources", "help_resources")
+    .row()
+    .text("🔙 Back to Menu", "back_to_menu");
 
   await ctx.reply(message, { reply_markup: keyboard, parse_mode: "Markdown" });
 });
@@ -906,11 +920,37 @@ bot.callbackQuery("back_to_menu", async (ctx) => {
     .row()
     .text("➕ New Agent", "add_agent")
     .row()
-    .text("🪙 Token List", "token_list");
+    .text("🪙 Token List", "token_list")
+    .row()
+    .text("📚 Help & Resources", "help_resources");
 
   const welcomeMessage = `🤖 Welcome to Caret Trading bot on the Sei Network!`;
 
   await ctx.reply(welcomeMessage, { reply_markup: options });
+});
+
+bot.callbackQuery("help_resources", async (ctx) => {
+  await ctx.answerCallbackQuery();
+
+  const message = `📚 **Help & Resources**\n\n` +
+    `Here are helpful links to get you started with Sei Trader:\n\n` +
+    `🌐 **Website & Documentation:** [seitrader.hetairoi.xyz](https://seitrader.hetairoi.xyz)\n` +
+    `• Documentation, guides, and tutorials\n\n` +
+    `🐦 **Follow us on X:** [@SeiTrader](https://x.com/SeiTrader)\n` +
+    `• Latest updates and announcements\n\n`+
+    `💻 **GitHub Codebase:** [github.com/caret-sei/sei-trader](https://github.com/caret-sei/sei-trader)\n` +
+    `• Open source code and contributions\n\n` +
+    `📺 **Watch Demo:** [Youtube Link](https://youtu.be/J-MeWAVusO8?si=hTDu5jcjV4qc0mOY)\n` +
+    `• See SeiTrader in action\n\n` +
+    `💡 **Need tokens?** Get them from our faucet at [seitrader.hetairoi.xyz/faucet](https://seitrader.hetairoi.xyz/faucet)`;
+
+  const keyboard = new InlineKeyboard()
+    .text("🔙 Back to Menu", "back_to_menu");
+
+  await ctx.reply(message, { 
+    reply_markup: keyboard, 
+    parse_mode: "Markdown"
+  });
 });
 
 bot.on("message:text", async (ctx) => {
