@@ -6,13 +6,13 @@
 
 
 :root {
-  --background: hsl(0 0% 98%);
+  --background: hsl(0 0% 97%); /* #f8f3f3 converted to HSL */
   --foreground: hsl(240 10% 8%);
-  --card: hsl(0 0% 98%);
+  --card: hsl(0 0% 97%); /* #f8f3f3 converted to HSL */
   --card-foreground: hsl(240 10% 8%);
-  --popover: hsl(0 0% 98%);
+  --popover: hsl(0 0% 97%); /* #f8f3f3 converted to HSL */
   --popover-foreground: hsl(240 10% 8%);
-  --primary: hsl(240 6% 12%);
+  --primary: hsl(2 72% 35%); /* #9e1f19 converted to HSL */
   --primary-foreground: hsl(0 0% 96%);
   --secondary: hsl(240 5% 92%);
   --secondary-foreground: hsl(240 6% 12%);
@@ -24,22 +24,22 @@
   --destructive-foreground: hsl(0 0% 96%);
   --border: hsl(240 6% 85%);
   --input: hsl(240 6% 85%);
-  --ring: hsl(240 10% 8%);
+  --ring: hsl(2 72% 35%); /* #9e1f19 converted to HSL */
   --chart-1: hsl(12 75% 58%);
   --chart-2: hsl(173 55% 40%);
   --chart-3: hsl(197 38% 26%);
   --chart-4: hsl(43 72% 64%);
   --chart-5: hsl(27 85% 65%);
   --radius: 0.6rem;
-  --sidebar-background: hsl(0 0% 96%);
+  --sidebar-background: hsl(0 0% 97%); /* #f8f3f3 converted to HSL */
   --sidebar-foreground: hsl(240 6% 28%);
-  --sidebar-primary: hsl(240 6% 12%);
+  --sidebar-primary: hsl(2 72% 35%); /* #9e1f19 converted to HSL */
   --sidebar-primary-foreground: hsl(0 0% 96%);
   --sidebar-accent: hsl(240 5% 92%);
   --sidebar-accent-foreground: hsl(240 6% 12%);
   --sidebar-border: hsl(220 12% 88%);
-  --sidebar-ring: hsl(217.2 88% 57%);
-  --sidebar: hsl(0 0% 96%);
+  --sidebar-ring: hsl(2 72% 35%); /* #9e1f19 converted to HSL */
+  --sidebar: hsl(0 0% 97%); /* #f8f3f3 converted to HSL */
 
   --grey-50: #0f0f0f;
   --grey-100: #1a1a1a;
@@ -55,11 +55,11 @@
 }
 
 .dark {
-  --background: hsl(240 8% 6%);
+  --background: hsl(0 0% 14%); /* #242424 converted to HSL */
   --foreground: hsl(0 0% 92%);
-  --card: hsl(240 8% 6%);
+  --card: hsl(0 0% 14%); /* #242424 converted to HSL */
   --card-foreground: hsl(0 0% 92%);
-  --popover: hsl(240 8% 6%);
+  --popover: hsl(0 0% 14%); /* #242424 converted to HSL */
   --popover-foreground: hsl(0 0% 92%);
   --primary: hsl(0 0% 92%);
   --primary-foreground: hsl(240 5% 18%);

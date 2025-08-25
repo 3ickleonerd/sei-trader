@@ -9,6 +9,8 @@ interface Store {
 interface StorePersist {
   bears: number;
   setBears: (bears: number) => void;
+  faucetLastUsed: number | null;
+  setFaucetLastUsed: (timestamp: number) => void;
 }
 
 export const useStore = create<Store>((set) => ({
@@ -21,6 +23,8 @@ export const useStorePersist = create<StorePersist>()(
     (set) => ({
       bears: 0,
       setBears: (bears: number) => set({ bears }),
+      faucetLastUsed: null,
+      setFaucetLastUsed: (timestamp: number) => set({ faucetLastUsed: timestamp }),
     }),
     { name: "zustand" }
   )

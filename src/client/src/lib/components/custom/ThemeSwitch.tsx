@@ -12,7 +12,7 @@ export default function ThemeSwitch() {
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.1 }}
       transition={{
-        scale: { type: "spring", visualDuration: 0.2, bounce: 0.5 },
+        scale: { type: "spring", visualDuration: 0.1, bounce: 0.5 },
       }}
     >
       <Button
