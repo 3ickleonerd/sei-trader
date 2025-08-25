@@ -1,9 +1,7 @@
 import hono from "./api";
 import path from "path";
-import { serve } from "bun";
 import { existsSync, statSync } from "fs";
 import { getMimeType } from "./utils";
-import env from "../../env";
 
 export function createStaticFileHandler() {
   return (req: Request) => {
@@ -96,47 +94,3 @@ export function createStaticFileHandler() {
 }
 
 export { hono as apiHandler };
-
-const server = serve({
-  development: false,
-  port: parseInt(env.CLIENT_PORT),
-
-  routes: {
-    "/api": new Response(
-      JSON.stringify({
-        message: "Bun Server",
-        version: "v1.0.0",
-      })
-    ),
-    "/api/v1/*": (req) => {
-      return hono.fetch(req);
-    },
-
-    "/*": (req) => {
-      const staticHandler = createStaticFileHandler();
-      return staticHandler(req) || new Response("Not Found", { status: 404 });
-    },
-  },
-
-  fetch(req) {
-    if (req.url.includes("/api/v1")) {
-      return hono.fetch(req);
-    }
-
-    const staticHandler = createStaticFileHandler();
-    const staticResponse = staticHandler(req);
-    if (staticResponse) {
-      return staticResponse;
-    }
-
-    return new Response("Not Found", { status: 404 });
-  },
-
-  error(error) {
-    console.error(error);
-    return new Response(`Internal Error: ${error.message}`, { status: 500 });
-  },
-});
-
-console.log(`Prod server running at ${server.url} 🚀`);
-console.log(`BUN VERSION: ${Bun.version}`);
