@@ -1703,7 +1703,10 @@ bot.callbackQuery(/^fund_agent_(\d+)$/, async (ctx) => {
     `• Send USDT → Escrow address (for buying tokens)\n` +
     `• Send SEI → Actor address (for transaction fees)\n` +
     `• Both must be funded for trades to work!\n` +
-    `• Only use Sei network for both tokens`;
+    `• Only use Sei network for both tokens\n\n` +
+    `🚰 **Need tokens? Get them from faucets:**\n` +
+    `• [Test USDT Faucet](https://seitrader.hetairoi.xyz/faucet)\n` +
+    `• [Sei Testnet Faucet](https://docs.sei.io/learn/faucet)`;
 
   await ctx.reply(message, {
     reply_markup: keyboard,
@@ -1838,11 +1841,11 @@ bot.callbackQuery(/^agent_balance_(\d+)$/, async (ctx) => {
     if (hasUsdt && hasSei) {
       message += `✅ **Ready for trading!** Both USDT and SEI are available.`;
     } else if (!hasUsdt && !hasSei) {
-      message += `❌ **Not ready for trading**\nNeeds: USDT (escrow) + SEI (actor)`;
+      message += `❌ **Not ready for trading**\nNeeds: USDT (escrow) + SEI (actor)\n\n🚰 **Need tokens? Get them from faucets:**\n• [Test USDT Faucet](https://seitrader.hetairoi.xyz/faucet)\n• [Sei Testnet Faucet](https://docs.sei.io/learn/faucet)`;
     } else if (!hasUsdt) {
-      message += `⚠️ **Missing USDT** in escrow for trading`;
+      message += `⚠️ **Missing USDT** in escrow for trading\n\n🚰 **Get USDT from:** [Test USDT Faucet](https://seitrader.hetairoi.xyz/faucet)`;
     } else {
-      message += `⚠️ **Missing SEI** in actor for gas fees`;
+      message += `⚠️ **Missing SEI** in actor for gas fees\n\n🚰 **Get SEI from:** [Sei Testnet Faucet](https://docs.sei.io/learn/faucet)`;
     }
     const keyboard = new InlineKeyboard()
       .text("🔄 Refresh Balance", `agent_balance_${agentId}`)
