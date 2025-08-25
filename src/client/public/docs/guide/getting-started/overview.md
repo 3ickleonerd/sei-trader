@@ -2,17 +2,24 @@
 
 Welcome to Sei Trader, the AI-powered cryptocurrency trading bot for the Sei Network! This guide will walk you through everything you need to know to start trading with AI assistance.
 
+## 🚀 Quick Start - Get Test Tokens
+
+**Currently deployed on Sei Testnet with test tokens available to trade. We provide test USDT - no real money involved.**
+
+1. **Test USDT Faucet**: https://seitrader.hetairoi.xyz/faucet
+2. **SEI Faucet**: https://docs.sei.io/learn/faucet
+
 ## What is Sei Trader?
 
-Sei Trader is an AI-powered cryptocurrency trading bot specifically designed for the Sei Network. It combines Google's Gemini 2.0 Flash AI model with smart contract-based escrow systems to provide secure, intelligent trading capabilities through a Telegram interface.
+Sei Trader is an AI-powered cryptocurrency trading bot specifically designed for the Sei Network. It combines top-of-the-line fine-tuned latest AI models with smart contract-based escrow systems to provide secure, intelligent trading capabilities through a Telegram interface.
 
 **Core Value Proposition**: AI-native trading optimized for Sei Network's high-speed, low-cost environment with non-custodial fund security.
 
 ## Key Features
 
 ### AI Trading Intelligence
-- **Advanced Market Analysis**: Real-time analysis using Google Gemini 2.0 Flash
-- **Multi-Token Support**: 100+ tokens on Sei ecosystem (WSEI, WBTC, WETH, iSEI, SEIYAN, FXS, ROCK, etc.)
+- **Advanced Market Analysis**: Real-time analysis using top-of-the-line fine-tuned latest AI models
+- **Multi-Token Support**: 30 tokens from the Sei ecosystem, expanding to more
 - **Intelligent Risk Assessment**: Automated stop-loss and take-profit calculations
 - **Natural Language Processing**: Understands trading queries in plain English
 - **Price History Analysis**: 7-day trend analysis with predictive insights

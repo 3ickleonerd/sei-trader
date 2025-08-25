@@ -143,4 +143,4 @@ function registerActor(uint256 owner_, address actor_) external onlyServer
 ### Token Standards
 - **ERC-20 Support**: Standard token interface compliance
 - **Wrapped Tokens**: Native tokens wrapped for EVM compatibility
-- **Multi-Token Support**: Support for 100+ tokens on Sei ecosystem
+- **Multi-Token Support**: Support for 30 tokens from the Sei ecosystem, expanding to more

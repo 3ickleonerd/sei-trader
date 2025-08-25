@@ -24,7 +24,7 @@ graph TB
     end
     
     subgraph "External Services"
-        GEMINI[Google Gemini AI]
+        AI_MODEL[Advanced AI Model]
         COINGECKO[CoinGecko API]
     end
     
@@ -39,7 +39,7 @@ graph TB
     SERVER --> BOT
     SERVER --> DB
     BOT --> CACHE
-    BOT --> GEMINI
+    BOT --> AI_MODEL
     BOT --> COINGECKO
     SERVER --> ORCH
     ORCH --> ESC
@@ -54,7 +54,7 @@ graph TB
     class TG,WEB interface
     class SERVER,API,BOT application
     class DB,CACHE,FILES data
-    class GEMINI,COINGECKO external
+    class AI_MODEL,COINGECKO external
     class ORCH,ESC,TOKENS blockchain
 ```
 
@@ -98,7 +98,7 @@ graph TB
 - **File Storage**: Static assets and configuration files
 
 ### External Services
-- **Google Gemini AI**: Advanced language model for trading analysis
+- **Advanced AI Model**: Top-of-the-line fine-tuned latest AI models for trading analysis
 - **CoinGecko API**: Real-time cryptocurrency market data
 
 ### Sei Network Layer
@@ -111,7 +111,7 @@ graph TB
 ### Backend Technologies
 - **Runtime**: Bun.js for high-performance JavaScript execution
 - **Database**: SQLite for lightweight, embedded database
-- **AI**: Google Gemini 2.0 Flash for advanced analysis
+- **AI**: Top-of-the-line fine-tuned latest AI models for advanced analysis
 - **Blockchain**: Sei Network with EVM compatibility
 
 ### Frontend Technologies

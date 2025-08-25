@@ -1,5 +1,12 @@
 # Funding Your Trading Agent
 
+## 🚀 Quick Start - Get Test Tokens
+
+**Currently deployed on Sei Testnet with test tokens available to trade. We provide test USDT - no real money involved.**
+
+1. **Test USDT Faucet**: https://seitrader.hetairoi.xyz/faucet
+2. **SEI Faucet**: https://docs.sei.io/learn/faucet
+
 ## USDT Funding Process
 
 Before your agent can trade, you need to fund its escrow contract with USDT:

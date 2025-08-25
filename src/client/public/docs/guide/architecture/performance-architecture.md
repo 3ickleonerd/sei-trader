@@ -101,11 +101,11 @@ const COINGECKO_CONFIG = {
 };
 ```
 
-#### Google AI Integration
+#### AI Integration
 ```typescript
-// Gemini AI configuration
-const ai = new GoogleGenAI({
-  apiKey: env.GOOGLE_API_KEY,
+// AI configuration
+const ai = new AIProvider({
+  apiKey: env.AI_API_KEY,
   httpOptions: {
     timeout: 30000,
     retries: 2

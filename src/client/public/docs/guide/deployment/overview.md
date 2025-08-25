@@ -51,8 +51,8 @@ cp .env.template .env
 ```bash
 # .env file configuration
 
-# Google AI API Key (for Gemini model)
-GOOGLE_API_KEY=your_gemini_api_key_here
+# AI API Key
+AI_API_KEY=your_ai_api_key_here
 
 # Telegram Bot Token
 TG_BOT_TOKEN=your_telegram_bot_token
@@ -73,10 +73,10 @@ COINGECKO_API_KEY=your_coingecko_api_key (optional)
 
 #### Getting API Keys
 
-##### Google AI API Key
-1. Visit [Google AI Studio](https://aistudio.google.com/)
+##### AI API Key
+1. Visit your preferred AI provider's platform
 2. Create or select a project
-3. Generate an API key for Gemini
+3. Generate an API key for the AI model
 4. Add billing information (required for production usage)
 
 ##### Telegram Bot Token
@@ -116,7 +116,7 @@ bun run db:status
 # Production environment
 NODE_ENV=production
 TG_BOT_TOKEN=prod_bot_token
-GOOGLE_API_KEY=prod_gemini_key
+AI_API_KEY=prod_ai_key
 PVT_KEY=0x_prod_private_key
 PORT=8080
 DATABASE_URL=production_db_url
@@ -191,8 +191,8 @@ bun run verify
 # Deploy to Sei Testnet
 bun run deploy:testnet
 
-# Deploy to Sei Mainnet
-bun run deploy:mainnet
+# Deploy to Sei Mainnet (Future)
+# bun run deploy:mainnet
 
 # Verify contracts on block explorer
 bun run verify:contracts
@@ -208,9 +208,9 @@ export const CONTRACT_ADDRESSES = {
     wsei: "0x..."
   },
   mainnet: {
-    orchestrator: "0x...",
-    usdt: "0x...",
-    wsei: "0x..."
+    orchestrator: "0x...", // Future deployment
+    usdt: "0x...", // Future deployment
+    wsei: "0x..." // Future deployment
   }
 };
 ```

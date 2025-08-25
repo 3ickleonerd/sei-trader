@@ -164,7 +164,7 @@ async developStrategy(
 
 ```typescript
 interface AgentConfig {
-  model: "gemini-2.0-flash";
+  model: "advanced-ai-model";
   temperature: number;        // Creativity vs consistency
   maxTokens: number;         // Response length limit
   timeout: number;           // Request timeout
@@ -172,7 +172,7 @@ interface AgentConfig {
 }
 
 const defaultConfig: AgentConfig = {
-  model: "gemini-2.0-flash",
+  model: "advanced-ai-model",
   temperature: 0.1,          // Low for consistent trading advice
   maxTokens: 2048,
   timeout: 30000,

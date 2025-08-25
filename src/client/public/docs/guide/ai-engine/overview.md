@@ -2,7 +2,7 @@
 
 ## AI Engine Overview
 
-The Sei Trader AI Engine is the cognitive core of the platform, powered by Google's Gemini 2.0 Flash model. It transforms natural language queries into sophisticated trading insights and actionable recommendations through advanced market analysis and risk assessment.
+The Sei Trader AI Engine is the cognitive core of the platform, powered by top-of-the-line fine-tuned latest AI models. It transforms natural language queries into sophisticated trading insights and actionable recommendations through advanced market analysis and risk assessment.
 
 ```mermaid
 graph TB
@@ -22,7 +22,7 @@ graph TB
     end
     
     subgraph "AI Models"
-        GEMINI[Gemini 2.0 Flash]
+        AI_MODEL[Advanced AI Model]
         SCHEMAS[Zod Validation]
         PROMPTS[System Prompts]
     end
@@ -30,7 +30,7 @@ graph TB
     FETCH --> COINGECKO
     FETCH --> CACHE
     EXTRACT --> TOKENS
-    ANALYZE --> GEMINI
+    ANALYZE --> AI_MODEL
     DECISION --> SCHEMAS
     GUARD --> PROMPTS
     
@@ -40,7 +40,7 @@ graph TB
     
     class INPUT,GUARD,EXTRACT,FETCH,ANALYZE,DECISION,OUTPUT process
     class COINGECKO,CACHE,TOKENS data
-    class GEMINI,SCHEMAS,PROMPTS ai
+    class AI_MODEL,SCHEMAS,PROMPTS ai
 ```
 
 ## Core AI Components
@@ -51,7 +51,7 @@ The `Agent` class serves as the foundation for all AI trading operations, provid
 
 ```typescript
 export class Agent {
-  private ai: GoogleGenAI;
+  private ai: AIProvider;
   private model: ModelName;
   private preamble: string;
   
@@ -59,7 +59,7 @@ export class Agent {
     model: ModelName;
     preamble: string;
   }) {
-    this.ai = new GoogleGenAI({ apiKey: env.GOOGLE_API_KEY });
+    this.ai = new AIProvider({ apiKey: env.AI_API_KEY });
     this.model = config.model;
     this.preamble = config.preamble;
   }
@@ -94,7 +94,7 @@ async enhancedWorkflow(userPrompt: string, walletBalance?: number): Promise<{
 1. **Prompt Guard**: Validates input for trading relevance
 2. **Ticker Extraction**: Identifies cryptocurrency symbols
 3. **Data Retrieval**: Fetches relevant market data
-4. **AI Analysis**: Processes data through Gemini model
+4. **AI Analysis**: Processes data through advanced AI model
 5. **Decision Generation**: Creates actionable trading recommendations
 6. **Response Formatting**: Structures output for user consumption
 
@@ -121,7 +121,7 @@ async enhancedWorkflow(userPrompt: string, walletBalance?: number): Promise<{
 ## Technology Stack
 
 ### AI Models
-- **Google Gemini 2.0 Flash**: Advanced language model
+- **Advanced AI Model**: Top-of-the-line fine-tuned latest AI models
 - **Custom Prompts**: Specialized trading prompts
 - **Structured Output**: Zod schema validation
 - **Response Caching**: Intelligent response caching

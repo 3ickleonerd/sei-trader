@@ -70,7 +70,7 @@ graph LR
 - **Prompt Guard**: Validates query relevance for trading
 - **Token Extraction**: Identifies cryptocurrency symbols
 - **Market Data Fetch**: Retrieves price history and market data
-- **AI Analysis**: Processes data through Gemini model
+- **AI Analysis**: Processes data through advanced AI model
 - **Decision Generation**: Creates trading recommendations
 
 ### 3. Response Generation

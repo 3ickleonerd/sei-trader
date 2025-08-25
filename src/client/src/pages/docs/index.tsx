@@ -1,5 +1,5 @@
 import Layout from "../layout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Input } from "@/src/lib/components/ui/input";
 import { Button } from "@/src/lib/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
@@ -62,6 +62,104 @@ const topics: Array<{
     }
 ];
 
+// Sidebar content component - memoized to prevent unnecessary re-renders
+const SidebarContent = memo(({ 
+    searchQuery, 
+    setSearchQuery, 
+    filteredTopics, 
+    selectedTopic, 
+    setSelectedTopic, 
+    selectedSubtopic, 
+    setSelectedSubtopic 
+}: {
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    filteredTopics: typeof topics;
+    selectedTopic: string;
+    setSelectedTopic: (topic: string) => void;
+    selectedSubtopic: string;
+    setSelectedSubtopic: (subtopic: string) => void;
+}) => (
+    <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+        className="w-full h-full space-y-6 p-6"
+    >
+        <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-primary tracking-tight">
+                Documentation
+            </h2>
+            
+            {/* Search Bar */}
+            <div className="space-y-2">
+                <Input
+                    placeholder="search topics..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border-2 border-border"
+                />
+            </div>
+        </div>
+
+        {/* Topics List */}
+        <nav className="space-y-3">
+            <AnimatePresence mode="wait">
+                {filteredTopics.map((topic) => (
+                    <motion.div
+                        key={topic.id}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-1"
+                    >
+                        {/* Topic Header */}
+                        <Button
+                            variant={selectedTopic === topic.id ? "primary" : "ghost"}
+                            onClick={() => {
+                                setSelectedTopic(topic.id);
+                                setSelectedSubtopic(topic.subtopics[0]?.id || "");
+                            }}
+                            className="w-full justify-start gap-3 h-auto p-3 border-2 border-border hover:border-primary"
+                        >
+                            <Icon name={topic.icon} className="w-4 h-4" />
+                            <span className="text-left font-medium">{topic.title}</span>
+                        </Button>
+
+                        {/* Subtopic List */}
+                        {selectedTopic === topic.id && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="ml-4 space-y-0.5"
+                            >
+                                {topic.subtopics.map((subtopic) => (
+                                    <Button
+                                        key={subtopic.id}
+                                        variant={selectedSubtopic === subtopic.id ? "secondary" : "ghost"}
+                                        onClick={() => {
+                                            setSelectedSubtopic(subtopic.id);
+                                        }}
+                                        className="w-full justify-start h-auto p-2 text-sm hover:bg-accent/50 border-l-2 border-transparent hover:border-border data-[state=active]:border-primary data-[state=active]:bg-primary/10"
+                                        data-state={selectedSubtopic === subtopic.id ? "active" : "inactive"}
+                                    >
+                                        <span className="text-left text-muted-foreground data-[state=active]:text-primary">
+                                            {subtopic.title}
+                                        </span>
+                                    </Button>
+                                ))}
+                            </motion.div>
+                        )}
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </nav>
+    </motion.div>
+));
+
 export default function DocsPage() {
     const [selectedTopic, setSelectedTopic] = useState("getting-started");
     const [selectedSubtopic, setSelectedSubtopic] = useState("overview");
@@ -104,103 +202,34 @@ export default function DocsPage() {
             });
     }, [selectedTopic, selectedSubtopic, currentSubtopic]);
 
-    // Sidebar content component to avoid duplication
-    const SidebarContent = () => (
-        <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-            className="w-full h-full space-y-6 p-6"
-        >
-            <div className="space-y-4">
-                <h2 className="text-2xl font-semibold text-primary tracking-tight">
-                    Documentation
-                </h2>
-                
-                {/* Search Bar */}
-                <div className="space-y-2">
-                    <Input
-                        placeholder="search topics..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="border-2 border-border"
-                    />
-                </div>
-            </div>
-
-            {/* Topics List */}
-            <nav className="space-y-3">
-                <AnimatePresence mode="wait">
-                    {filteredTopics.map((topic) => (
-                        <motion.div
-                            key={topic.id}
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -5 }}
-                            transition={{ duration: 0.2 }}
-                            className="space-y-1"
-                        >
-                            {/* Topic Header */}
-                            <Button
-                                variant={selectedTopic === topic.id ? "primary" : "ghost"}
-                                onClick={() => {
-                                    setSelectedTopic(topic.id);
-                                    setSelectedSubtopic(topic.subtopics[0]?.id || "");
-                                }}
-                                className="w-full justify-start gap-3 h-auto p-3 border-2 border-border hover:border-primary"
-                            >
-                                <Icon name={topic.icon} className="w-4 h-4" />
-                                <span className="text-left font-medium">{topic.title}</span>
-                            </Button>
-
-                            {/* Subtopic List */}
-                            {selectedTopic === topic.id && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="ml-4 space-y-0.5"
-                                >
-                                    {topic.subtopics.map((subtopic) => (
-                                        <Button
-                                            key={subtopic.id}
-                                            variant={selectedSubtopic === subtopic.id ? "secondary" : "ghost"}
-                                            onClick={() => {
-                                                setSelectedSubtopic(subtopic.id);
-                                            }}
-                                            className="w-full justify-start h-auto p-2 text-sm hover:bg-accent/50 border-l-2 border-transparent hover:border-border data-[state=active]:border-primary data-[state=active]:bg-primary/10"
-                                            data-state={selectedSubtopic === subtopic.id ? "active" : "inactive"}
-                                        >
-                                            <span className="text-left text-muted-foreground data-[state=active]:text-primary">
-                                                {subtopic.title}
-                                            </span>
-                                        </Button>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-            </nav>
-        </motion.div>
-    );
-
     return (
-        <Layout mobileMenuContent={<SidebarContent />}>
+        <Layout mobileMenuContent={
+            <SidebarContent 
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filteredTopics={filteredTopics}
+                selectedTopic={selectedTopic}
+                setSelectedTopic={setSelectedTopic}
+                selectedSubtopic={selectedSubtopic}
+                setSelectedSubtopic={setSelectedSubtopic}
+            />
+        }>
             <div className="h-full flex">
                 {/* Desktop Sidebar - Hidden on mobile */}
                 <div className="hidden md:block w-80 border-r border-border bg-card">
-                    <SidebarContent />
+                    <SidebarContent 
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        filteredTopics={filteredTopics}
+                        selectedTopic={selectedTopic}
+                        setSelectedTopic={setSelectedTopic}
+                        selectedSubtopic={selectedSubtopic}
+                        setSelectedSubtopic={setSelectedSubtopic}
+                    />
                 </div>
 
                 {/* Content Area */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                    className="flex-1 p-4 md:p-8 overflow-y-auto md:ml-0"
-                >
+                <div className="flex-1 p-4 md:p-8 overflow-y-auto md:ml-0">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={`${selectedTopic}-${selectedSubtopic}`}
@@ -236,7 +265,7 @@ export default function DocsPage() {
                             )}
                         </motion.div>
                     </AnimatePresence>
-                </motion.div>
+                </div>
             </div>
         </Layout>
     );
