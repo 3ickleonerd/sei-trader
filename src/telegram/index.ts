@@ -149,7 +149,8 @@ async function executeTrade(
   userId: number,
   tokenSymbol: string,
   tokenAmount: bigint,
-  usdtCost: bigint
+  usdtCost: bigint,
+  tradeType: "buy" | "sell" = "buy"
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   try {
     const tokenContract = definitions.tokens?.[tokenSymbol];
@@ -175,13 +176,6 @@ async function executeTrade(
 
     const escrowAddress = agent.escrow_address as viem.Address;
 
-    const escrowUsdtBalance = await actorClient.readContract({
-      address: usdtContract.address,
-      abi: usdtContract.abi,
-      functionName: "balanceOf",
-      args: [escrowAddress],
-    });
-
     // Get USDT decimals for proper formatting
     const usdtDecimals = await actorClient.readContract({
       address: usdtContract.address,
@@ -189,19 +183,59 @@ async function executeTrade(
       functionName: "decimals",
       args: [],
     });
-    
-    console.log(`Initial escrow USDT balance: ${Number(escrowUsdtBalance) / 10**Number(usdtDecimals)} USDT`);
-    console.log(`Required USDT cost: ${Number(usdtCost) / 10**Number(usdtDecimals)} USDT`);
 
-    if (escrowUsdtBalance < usdtCost) {
-      return {
-        success: false,
-        error: `Insufficient USDT balance. Escrow has ${
-          Number(escrowUsdtBalance) / 10 ** Number(usdtDecimals)
-        } USDT, but needs ${
-          Number(usdtCost) / 10 ** Number(usdtDecimals)
-        } USDT. Please fund the escrow address first.`,
-      };
+    // Get token decimals
+    const tokenDecimals = await actorClient.readContract({
+      address: tokenContract.address,
+      abi: tokenContract.abi,
+      functionName: "decimals",
+      args: [],
+    });
+
+    if (tradeType === "buy") {
+      // For buying: check USDT balance in escrow
+      const escrowUsdtBalance = await actorClient.readContract({
+        address: usdtContract.address,
+        abi: usdtContract.abi,
+        functionName: "balanceOf",
+        args: [escrowAddress],
+      });
+      
+      console.log(`Initial escrow USDT balance: ${Number(escrowUsdtBalance) / 10**Number(usdtDecimals)} USDT`);
+      console.log(`Required USDT cost: ${Number(usdtCost) / 10**Number(usdtDecimals)} USDT`);
+
+      if (escrowUsdtBalance < usdtCost) {
+        return {
+          success: false,
+          error: `Insufficient USDT balance. Escrow has ${
+            Number(escrowUsdtBalance) / 10 ** Number(usdtDecimals)
+          } USDT, but needs ${
+            Number(usdtCost) / 10 ** Number(usdtDecimals)
+          } USDT. Please fund the escrow address first.`,
+        };
+      }
+    } else {
+      // For selling: check token balance in escrow
+      const escrowTokenBalance = await actorClient.readContract({
+        address: tokenContract.address,
+        abi: tokenContract.abi,
+        functionName: "balanceOf",
+        args: [escrowAddress],
+      });
+      
+      console.log(`Initial escrow ${tokenSymbol} balance: ${Number(escrowTokenBalance) / 10**Number(tokenDecimals)} ${tokenSymbol}`);
+      console.log(`Required ${tokenSymbol} amount: ${Number(tokenAmount) / 10**Number(tokenDecimals)} ${tokenSymbol}`);
+
+      if (escrowTokenBalance < tokenAmount) {
+        return {
+          success: false,
+          error: `Insufficient ${tokenSymbol} balance. Escrow has ${
+            Number(escrowTokenBalance) / 10 ** Number(tokenDecimals)
+          } ${tokenSymbol}, but needs ${
+            Number(tokenAmount) / 10 ** Number(tokenDecimals)
+          } ${tokenSymbol}. Please acquire ${tokenSymbol} first.`,
+        };
+      }
     }
 
     const actorSeiBalance = await actorClient.getBalance({
@@ -237,57 +271,115 @@ async function executeTrade(
       ],
     } as const;
 
-    console.log(`Executing fundActor: transferring ${Number(usdtCost) / 10**Number(usdtDecimals)} USDT from escrow to actor`);
-    
-    const fundActorHash = await actorClient.writeContract({
-      address: escrowContract.address,
-      abi: escrowContract.abi,
-      functionName: "fundActor",
-      args: [usdtContract.address, usdtCost],
-    });
+    let hash: `0x${string}`;
 
-    console.log(`FundActor transaction submitted: ${fundActorHash}`);
-    const fundActorReceipt = await actorClient.waitForTransactionReceipt({ hash: fundActorHash });
-    console.log(`FundActor transaction confirmed: ${fundActorReceipt.status}`);
-
-    const currentAllowance = await actorClient.readContract({
-      address: usdtContract.address,
-      abi: usdtContract.abi,
-      functionName: "allowance",
-      args: [actorClient.account.address, tokenContract.address],
-    });
-
-    if (currentAllowance < usdtCost) {
-      const approveHash = await actorClient.writeContract({
-        address: usdtContract.address,
-        abi: usdtContract.abi,
-        functionName: "approve",
-        args: [tokenContract.address, usdtCost],
+    if (tradeType === "buy") {
+      console.log(`Executing fundActor: transferring ${Number(usdtCost) / 10**Number(usdtDecimals)} USDT from escrow to actor`);
+      
+      const fundActorHash = await actorClient.writeContract({
+        address: escrowContract.address,
+        abi: escrowContract.abi,
+        functionName: "fundActor",
+        args: [usdtContract.address, usdtCost],
       });
 
-      await actorClient.waitForTransactionReceipt({ hash: approveHash });
+      console.log(`FundActor transaction submitted: ${fundActorHash}`);
+      const fundActorReceipt = await actorClient.waitForTransactionReceipt({ hash: fundActorHash });
+      console.log(`FundActor transaction confirmed: ${fundActorReceipt.status}`);
+
+      const currentAllowance = await actorClient.readContract({
+        address: usdtContract.address,
+        abi: usdtContract.abi,
+        functionName: "allowance",
+        args: [actorClient.account.address, tokenContract.address],
+      });
+
+      if (currentAllowance < usdtCost) {
+        const approveHash = await actorClient.writeContract({
+          address: usdtContract.address,
+          abi: usdtContract.abi,
+          functionName: "approve",
+          args: [tokenContract.address, usdtCost],
+        });
+
+        await actorClient.waitForTransactionReceipt({ hash: approveHash });
+      }
+
+      hash = await actorClient.writeContract({
+        address: tokenContract.address as viem.Address,
+        abi: tokenContract.abi,
+        functionName: "buy",
+        args: [tokenAmount, usdtCost],
+      }) as `0x${string}`;
+
+      console.log(`Buy transaction executed: ${hash}`);
+    } else {
+      // For selling: transfer tokens from escrow to actor, then execute sell
+      console.log(`Executing fundActor: transferring ${Number(tokenAmount) / 10**Number(tokenDecimals)} ${tokenSymbol} from escrow to actor`);
+      
+      const fundActorHash = await actorClient.writeContract({
+        address: escrowContract.address,
+        abi: escrowContract.abi,
+        functionName: "fundActor",
+        args: [tokenContract.address, tokenAmount],
+      });
+
+      console.log(`FundActor transaction submitted: ${fundActorHash}`);
+      const fundActorReceipt = await actorClient.waitForTransactionReceipt({ hash: fundActorHash });
+      console.log(`FundActor transaction confirmed: ${fundActorReceipt.status}`);
+
+      // Check if actor has allowance to transfer tokens to the token contract
+      const currentTokenAllowance = await actorClient.readContract({
+        address: tokenContract.address,
+        abi: tokenContract.abi,
+        functionName: "allowance",
+        args: [actorClient.account.address, tokenContract.address],
+      });
+
+      if (currentTokenAllowance < tokenAmount) {
+        const approveHash = await actorClient.writeContract({
+          address: tokenContract.address,
+          abi: tokenContract.abi,
+          functionName: "approve",
+          args: [tokenContract.address, tokenAmount],
+        });
+
+        await actorClient.waitForTransactionReceipt({ hash: approveHash });
+      }
+
+      hash = await actorClient.writeContract({
+        address: tokenContract.address as viem.Address,
+        abi: tokenContract.abi,
+        functionName: "sell",
+        args: [tokenAmount, usdtCost], // usdtCost is the revenue we expect to get
+      }) as `0x${string}`;
+
+      console.log(`Sell transaction executed: ${hash}`);
     }
 
-    const hash = await actorClient.writeContract({
-      address: tokenContract.address as viem.Address,
-      abi: tokenContract.abi,
-      functionName: "buy",
-      args: [tokenAmount, usdtCost],
-    });
-
-    // Wait for buy transaction to complete
+    // Wait for transaction to complete
     await actorClient.waitForTransactionReceipt({ hash });
     
     // Check final balances to verify the trade worked
-    const finalEscrowUsdtBalance = await actorClient.readContract({
-      address: usdtContract.address,
-      abi: usdtContract.abi,
-      functionName: "balanceOf",
-      args: [escrowAddress],
-    });
-    
-    console.log(`Final escrow USDT balance: ${Number(finalEscrowUsdtBalance) / 10**18} USDT`);
-    console.log(`Balance change: ${Number(escrowUsdtBalance - finalEscrowUsdtBalance) / 10**18} USDT`);
+    if (tradeType === "buy") {
+      const finalEscrowUsdtBalance = await actorClient.readContract({
+        address: usdtContract.address,
+        abi: usdtContract.abi,
+        functionName: "balanceOf",
+        args: [escrowAddress],
+      });
+      
+      console.log(`Final escrow USDT balance: ${Number(finalEscrowUsdtBalance) / 10**Number(usdtDecimals)} USDT`);
+    } else {
+      const finalEscrowTokenBalance = await actorClient.readContract({
+        address: tokenContract.address,
+        abi: tokenContract.abi,
+        functionName: "balanceOf",
+        args: [escrowAddress],
+      });
+      
+      console.log(`Final escrow ${tokenSymbol} balance: ${Number(finalEscrowTokenBalance) / 10**Number(tokenDecimals)} ${tokenSymbol}`);
+    }
 
     return { success: true, txHash: hash };
   } catch (error) {
@@ -652,6 +744,14 @@ async function handleTradeExecution(
     );
   }
 
+  // If user has only one agent, execute the trade directly with that agent
+  if (agents.length === 1) {
+    const agent: any = agents[0];
+    await executeDirectTrade(ctx, userId, agent.id, message);
+    return;
+  }
+
+  // If user has multiple agents, let them choose which agent to use
   let responseMessage = "🤖 **Trade Execution Request**\n\n";
   responseMessage += "💡 **Detected Trade Details:**\n";
   responseMessage += `• Action: ${extractedData.action || "trade"}\n`;
@@ -659,16 +759,14 @@ async function handleTradeExecution(
   responseMessage += `• Amount: ${
     extractedData.amount ? `$${extractedData.amount}` : "not specified"
   }\n\n`;
-  responseMessage +=
-    "⚠️ **Note:** Direct trade execution are temporarily disabled. Please use suggested trades for now.\n\n";
-  responseMessage += "🤖 **Your Available Agents:**\n";
+  responseMessage += "🤖 **Choose an agent to execute this trade:**\n";
 
   const keyboard = new InlineKeyboard();
 
-  for (let i = 0; i < Math.min(agents.length, 3); i++) {
+  for (let i = 0; i < agents.length; i++) {
     const agent: any = agents[i];
     responseMessage += `${i + 1}. ${agent.agent_name}\n`;
-    keyboard.text(`🤖 ${agent.agent_name}`, `agent_${agent.id}`).row();
+    keyboard.text(`⚡ ${agent.agent_name}`, `direct_trade_${agent.id}_${encodeURIComponent(message)}`).row();
   }
 
   keyboard.text("🔙 Back to Menu", "back_to_menu");
@@ -677,6 +775,232 @@ async function handleTradeExecution(
     reply_markup: keyboard,
     parse_mode: "Markdown",
   });
+}
+
+async function executeDirectTrade(
+  ctx: any,
+  userId: number,
+  agentId: number,
+  tradePrompt: string
+): Promise<void> {
+  const agent = db
+    .query("SELECT * FROM user_agents WHERE id = ? AND user_id = ?")
+    .get(agentId, userId) as any;
+
+  if (!agent) {
+    return ctx.reply("❌ Agent not found or session expired.");
+  }
+
+  try {
+    // Check funding status first
+    const usdtBalance = await getUSDTBalance(agent.escrow_address);
+    const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
+
+    const hasUsdt = parseFloat(usdtBalance) > 0;
+    const hasSei = parseFloat(actorSeiBalance) > 0;
+
+    if (!hasUsdt || !hasSei) {
+      const actorAddress = await getActorAddress(userId, agent.agent_name);
+
+      let message = "❌ **Cannot execute trade**\n\n";
+      message += "Your agent needs both USDT and SEI to execute trades:\n\n";
+
+      if (!hasUsdt) {
+        message += `🏦 **Missing USDT** in escrow\n`;
+        message += `Send USDT to: \`${agent.escrow_address}\`\n\n`;
+      } else {
+        message += `✅ USDT available in escrow: ${usdtBalance} USDT\n\n`;
+      }
+
+      if (!hasSei) {
+        message += `⚡ **Missing SEI** for gas fees\n`;
+        message += `Send SEI to: \`${actorAddress}\`\n\n`;
+      } else {
+        message += `✅ SEI available for gas: ${actorSeiBalance} SEI\n\n`;
+      }
+
+      message += "💡 Use the 'Fund Agent' button to get funding instructions.";
+
+      const keyboard = new InlineKeyboard()
+        .text("💸 Fund Agent", `fund_agent_${agentId}`)
+        .text("💰 Check Balance", `agent_balance_${agentId}`)
+        .row()
+        .text("🔙 Back to Agent", `agent_${agentId}`);
+
+      return ctx.reply(message, {
+        reply_markup: keyboard,
+        parse_mode: "Markdown",
+      });
+    }
+
+    const loadingMessage = await ctx.reply(
+      "⚡ **Processing Trade Request...**\n\n" +
+        `Your agent is analyzing your request: "${tradePrompt}"\n\n` +
+        "⏳ Generating trade suggestion...",
+      { parse_mode: "Markdown" }
+    );
+
+    const tradingAgent = new Agent({
+      model: "gemini-2.0-flash",
+      preamble: `You are a professional cryptocurrency trading agent with specific user instructions.`,
+    });
+
+    let userPrompt = `TRADE REQUEST: "${tradePrompt}"\n\n`;
+    userPrompt += `Please analyze this specific trade request and provide a recommendation.\n\n`;
+    userPrompt += `My general trading strategy for context: "${agent.instructions}"\n\n`;
+    userPrompt += `Generate a specific trade suggestion based on the request above, considering both the request and my trading strategy.\n\n`;
+
+    const declinedTrades = db
+      .query(
+        "SELECT trade_data FROM declined_trades WHERE user_id = ? AND agent_id = ? ORDER BY declined_at DESC LIMIT 3"
+      )
+      .all(userId, agentId) as any[];
+
+    if (declinedTrades.length > 0) {
+      userPrompt += `\nFor context, here are some recent trade suggestions I declined (avoid similar trades):\n`;
+      declinedTrades.forEach((decline, index) => {
+        try {
+          const tradeData = JSON.parse(decline.trade_data);
+          userPrompt += `${index + 1}. ${tradeData.token_symbol} - ${
+            tradeData.reasoning
+          }\n`;
+        } catch (e) {}
+      });
+    }
+
+    const walletBalance = parseFloat(usdtBalance);
+    const result = await tradingAgent.enhancedWorkflow(userPrompt, walletBalance);
+
+    await safeDeleteMessage(ctx, loadingMessage.message_id);
+
+    if (result.error) {
+      const keyboard = new InlineKeyboard()
+        .text("🔄 Try Again", `execute_trade_${agentId}`)
+        .row()
+        .text("🤖 Back to Agent", `agent_${agentId}`)
+        .row()
+        .text("🔙 Back to Agents", "my_agents");
+
+      // Check if it's a descriptive error (like prompt guard failure) or a generic service error
+      let errorMessage: string;
+      if (result.error === 'API_QUOTA_EXCEEDED' || result.error === 'AI_SERVICE_UNAVAILABLE' || result.error === 'SERVICE_UNAVAILABLE') {
+        // Use formatted message for service errors
+        const formattedError = formatErrorMessage(result.error);
+        errorMessage = `❌ **Error generating trade for your request:**\n\n${formattedError}`;
+      } else {
+        // Show the actual descriptive error for prompt guard failures and other specific errors
+        errorMessage = `❌ **Cannot process your trade request:**\n\n${result.error}\n\n💡 **Tip:** Make sure your request aligns with your agent's trading strategy, or create a new agent with different instructions.`;
+      }
+      
+      return safeErrorReply(ctx, errorMessage, keyboard);
+    }
+
+    let responseMessage = `⚡ **Direct Trade Execution: "${tradePrompt}"**\n\n`;
+    responseMessage += `🤖 **Agent:** ${agent.agent_name}\n`;
+    responseMessage += `📝 **Your Request:** ${tradePrompt}\n\n`;
+
+    if (result.tradeDecision) {
+      const td = result.tradeDecision;
+
+      console.log(`AI Trade Decision:`, {
+        token: td.token,
+        entry: td.entry,
+        tradeAmount: td.tradeAmount,
+        message: td.message
+      });
+
+      // Use AI's suggested trade amount in USDT, fallback to reasonable amount if not provided
+      const usdtAmount = td.tradeAmount || Math.min(50, walletBalance * 0.3);
+      // Calculate token amount based on USDT amount and entry price
+      const tokenAmount = usdtAmount / td.entry;
+
+      console.log(`Trade calculation: ${usdtAmount} USDT / ${td.entry} = ${tokenAmount} tokens`);
+
+      const tradeData = {
+        type: "tradeDecision", // Required for execution handler validation
+        token_symbol: td.token.toUpperCase(),
+        token_amount: tokenAmount,
+        usdt_cost: usdtAmount,
+        reasoning: td.message,
+        confidence: td.confidence,
+        data: {
+          token: td.token.toUpperCase(),
+          tradeType: td.tradeType || "buy",
+          entry: td.entry,
+          currentPrice: td.currentPrice,
+          sl: td.sl,
+          tp: td.tp,
+          message: td.message,
+          confidence: td.confidence,
+          tradeAmount: usdtAmount
+        }
+      };
+
+      responseMessage += `🎯 **Recommended Trade:**\n`;
+      responseMessage += `• **Token:** ${tradeData.token_symbol}\n`;
+      responseMessage += `• **Entry Price:** $${td.entry.toFixed(4)}\n`;
+      responseMessage += `• **Current Price:** $${td.currentPrice.toFixed(4)}\n`;
+      responseMessage += `• **Stop Loss:** $${td.sl.toFixed(4)}\n`;
+      responseMessage += `• **Take Profit:** $${td.tp.toFixed(4)}\n`;
+      responseMessage += `• **Confidence:** ${tradeData.confidence}%\n\n`;
+      
+      responseMessage += `📊 **Analysis:**\n${tradeData.reasoning}\n\n`;
+      
+      responseMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      responseMessage += `💰 **🎯 SUGGESTED TRADE AMOUNT: ${tradeData.usdt_cost.toFixed(2)} USDT**\n`;
+      const tradeAction = tradeData.data?.tradeType === "sell" ? "sell" : "purchase";
+      responseMessage += `📦 *Will ${tradeAction} approximately ${tradeData.token_amount.toFixed(6)} ${tradeData.token_symbol}*\n`;
+      responseMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+      const tradeId = generateTradeId();
+      tradeDataStore.set(tradeId, {
+        ...tradeData,
+        agentId: agentId,
+        userId: userId,
+        timestamp: Date.now(),
+      });
+
+      // Set 5 minute expiry for trade data
+      setTimeout(() => {
+        tradeDataStore.delete(tradeId);
+      }, 5 * 60 * 1000);
+
+      responseMessage += "🚀 **Choose your action:**";
+
+      const keyboard = new InlineKeyboard()
+        .text("✅ Accept Trade", `confirm_trade_${agentId}_${tradeId}`)
+        .text("💰 Custom Amount", `custom_amount_${agentId}_${tradeId}`)
+        .row()
+        .text("❌ Decline", `decline_trade_${agentId}_${tradeId}`)
+        .text("🔙 Back to Agent", `agent_${agentId}`);
+
+      await ctx.reply(responseMessage, {
+        reply_markup: keyboard,
+        parse_mode: "Markdown",
+      });
+    } else {
+      const keyboard = new InlineKeyboard()
+        .text("🔄 Try Again", `execute_trade_${agentId}`)
+        .text("🔙 Back to Agent", `agent_${agentId}`);
+
+      await ctx.reply(
+        "❌ **No trade suggestion generated**\n\n" +
+          "The agent couldn't generate a suitable trade for your request. Please try with a different prompt.",
+        { reply_markup: keyboard, parse_mode: "Markdown" }
+      );
+    }
+  } catch (error) {
+    console.error("Error executing direct trade:", error);
+
+    const keyboard = new InlineKeyboard()
+      .text("🔄 Try Again", `execute_trade_${agentId}`)
+      .text("🔙 Back to Agent", `agent_${agentId}`);
+
+    const formattedError = formatErrorMessage(error);
+    const errorMessage = "❌ **Error executing trade**\n\n" + formattedError;
+    
+    await safeErrorReply(ctx, errorMessage, keyboard);
+  }
 }
 
 async function handleTradeRecommendation(
@@ -1236,6 +1560,20 @@ bot.on("message:text", async (ctx) => {
   }
 });
 
+bot.callbackQuery(/^direct_trade_(\d+)_(.+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Processing direct trade..." });
+
+  const agentId = parseInt(ctx.match[1]);
+  const tradePrompt = decodeURIComponent(ctx.match[2]);
+  const userId = getUserId(ctx.from?.id!);
+
+  if (!userId) {
+    return ctx.reply("User not found. Please use /start to register.");
+  }
+
+  await executeDirectTrade(ctx, userId, agentId, tradePrompt);
+});
+
 bot.callbackQuery(/^agent_(\d+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
 
@@ -1404,8 +1742,16 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
         .row()
         .text("🔙 Back to Agents", "my_agents");
 
-      const formattedError = formatErrorMessage(result.error);
-      const errorMessage = `❌ **Error generating trade suggestion:**\n\n${formattedError}\n\nPlease try again later.`;
+      // Check if it's a descriptive error (like prompt guard failure) or a generic service error
+      let errorMessage: string;
+      if (result.error === 'API_QUOTA_EXCEEDED' || result.error === 'AI_SERVICE_UNAVAILABLE' || result.error === 'SERVICE_UNAVAILABLE') {
+        // Use formatted message for service errors
+        const formattedError = formatErrorMessage(result.error);
+        errorMessage = `❌ **Error generating trade suggestion:**\n\n${formattedError}`;
+      } else {
+        // Show the actual descriptive error for prompt guard failures and other specific errors
+        errorMessage = `❌ **Cannot generate trade suggestion:**\n\n${result.error}\n\n💡 **Tip:** Make sure your request aligns with your agent's trading strategy, or create a new agent with different instructions.`;
+      }
       
       return safeErrorReply(ctx, errorMessage, keyboard);
     }
@@ -1488,6 +1834,7 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
         type: "tradeDecision", // Required by execution handler
         data: {
           token: td.token.toUpperCase(),
+          tradeType: td.tradeType || "buy",
           entry: td.entry,
           currentPrice: td.currentPrice,
           sl: td.sl,
@@ -1958,11 +2305,12 @@ bot.callbackQuery(/^accept_trade_([a-z0-9]+)$/, async (ctx) => {
     );
 
     const result = await executeTrade(
+      tradeData.agentId,
       userId,
-      agent,
       tradeData.token_symbol,
-      tradeData.token_amount,
-      BigInt(Math.floor(tradeData.usdt_cost * 1000000))
+      BigInt(Math.floor(tradeData.token_amount * 10 ** 18)),
+      BigInt(Math.floor(tradeData.usdt_cost * 10 ** 18)),
+      tradeData.data?.tradeType || "buy"
     );
 
     await safeDeleteMessage(ctx, loadingMessage.message_id);
@@ -2094,7 +2442,8 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
       userId,
       tokenSymbol,
       tokenAmount,
-      usdtCost
+      usdtCost,
+      td.tradeType || "buy"
     );
 
     await safeDeleteMessage(ctx, loadingMessage.message_id);
@@ -2391,10 +2740,10 @@ bot.on("message:text", async (ctx) => {
       preamble: `You are a professional cryptocurrency trading agent with specific user instructions.`,
     });
 
-    let userPrompt = `URGENT TRADE REQUEST: "${tradePrompt}"\n\n`;
-    userPrompt += `This is a direct trade execution request that takes PRIORITY over my base strategy.\n\n`;
-    userPrompt += `My base strategy for context: "${agent.instructions}"\n\n`;
-    userPrompt += `Please generate a specific trade suggestion based on the urgent request above, using the base strategy only for additional context if needed.\n\n`;
+    let userPrompt = `TRADE REQUEST: "${tradePrompt}"\n\n`;
+    userPrompt += `Please analyze this specific trade request and provide a recommendation.\n\n`;
+    userPrompt += `My general trading strategy for context: "${agent.instructions}"\n\n`;
+    userPrompt += `Generate a specific trade suggestion based on the request above, considering both the request and my trading strategy.\n\n`;
 
     const declinedTrades = db
       .query(
@@ -2466,11 +2815,23 @@ Available tokens: ${Object.keys(tokens).join(", ")}`;
       console.log(`Trade calculation: ${usdtAmount} USDT / ${td.entry} = ${tokenAmount} tokens`);
 
       const tradeData = {
+        type: "tradeDecision", // Required for execution handler validation
         token_symbol: td.token.toUpperCase(),
         token_amount: tokenAmount,
         usdt_cost: usdtAmount,
         reasoning: td.message,
         confidence: td.confidence,
+        data: {
+          token: td.token.toUpperCase(),
+          tradeType: td.tradeType || "buy",
+          entry: td.entry,
+          currentPrice: td.currentPrice,
+          sl: td.sl,
+          tp: td.tp,
+          message: td.message,
+          confidence: td.confidence,
+          tradeAmount: usdtAmount
+        }
       };
 
       responseMessage += `🎯 **Recommended Trade:**\n`;
@@ -2485,7 +2846,8 @@ Available tokens: ${Object.keys(tokens).join(", ")}`;
       
       responseMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
       responseMessage += `💰 **🎯 SUGGESTED TRADE AMOUNT: ${tradeData.usdt_cost.toFixed(2)} USDT**\n`;
-      responseMessage += `📦 *Will purchase approximately ${tradeData.token_amount.toFixed(6)} ${tradeData.token_symbol}*\n`;
+      const tradeAction = tradeData.data?.tradeType === "sell" ? "sell" : "purchase";
+      responseMessage += `📦 *Will ${tradeAction} approximately ${tradeData.token_amount.toFixed(6)} ${tradeData.token_symbol}*\n`;
       responseMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
       const tradeId = generateTradeId();

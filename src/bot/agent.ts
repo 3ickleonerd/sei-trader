@@ -36,6 +36,7 @@ const TokenExtractionResultSchema = z.object({
 
 const TradeDecisionSchema = z.object({
   token: z.string(),
+  tradeType: z.enum(["buy", "sell"]).default("buy"), // Buy or sell operation
   sl: z.number(),
   tp: z.number(),
   entry: z.number(),
@@ -237,9 +238,11 @@ export class Agent {
       - Support and resistance levels
       - Risk management parameters
       - User's available balance for trading
+      - Whether this should be a BUY or SELL operation based on the user's request
       
       Provide specific entry, stop loss, and take profit levels with detailed reasoning.
       Also suggest an appropriate trade amount (tradeAmount) in USDT that fits within the user's budget.
+      Set tradeType to "buy" for buying tokens with USDT, or "sell" for selling tokens to get USDT.
       
       IMPORTANT: Return confidence as a percentage number between 0-100 (e.g., 75 for 75% confidence, not 0.75).`,
     });
@@ -261,6 +264,7 @@ export class Agent {
       type: "object",
       properties: {
         token: { type: "string" },
+        tradeType: { type: "string", enum: ["buy", "sell"] },
         sl: { type: "number" },
         tp: { type: "number" },
         entry: { type: "number" },
@@ -271,6 +275,7 @@ export class Agent {
       },
       required: [
         "token",
+        "tradeType",
         "sl",
         "tp",
         "entry",
@@ -705,9 +710,11 @@ export class Agent {
       - Market sentiment from additional data
       - Risk management parameters
       - User's available balance for trading
+      - Whether this should be a BUY or SELL operation based on the user's request
       
       Provide specific entry, stop loss, and take profit levels with detailed reasoning.
       Also suggest an appropriate trade amount (tradeAmount) in USDT that fits within the user's budget.
+      Set tradeType to "buy" for buying tokens with USDT, or "sell" for selling tokens to get USDT.
       
       IMPORTANT: Return confidence as a percentage number between 0-100 (e.g., 75 for 75% confidence, not 0.75).`,
     });
@@ -734,6 +741,7 @@ export class Agent {
       type: "object",
       properties: {
         token: { type: "string" },
+        tradeType: { type: "string", enum: ["buy", "sell"] },
         sl: { type: "number" },
         tp: { type: "number" },
         entry: { type: "number" },
@@ -744,6 +752,7 @@ export class Agent {
       },
       required: [
         "token",
+        "tradeType",
         "sl",
         "tp",
         "entry",
