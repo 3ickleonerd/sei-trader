@@ -1,3 +1,5 @@
+<img width="1920" height="1080" alt="Sei Trader" src="https://github.com/user-attachments/assets/648e208a-01d0-487b-8296-52cb70bff481" />
+
 # Sei Trader
 Fast, precise, and intelligent AI-native trading agent, built on Sei.
 
