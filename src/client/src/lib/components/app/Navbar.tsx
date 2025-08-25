@@ -1,8 +1,15 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Image } from "../custom/Image";
 import { Button } from "../ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { Menu } from "lucide-react";
+import type { ReactNode } from "react";
 
-export default function Navbar() {
+interface NavbarProps {
+  mobileMenuContent?: ReactNode;
+}
+
+export default function Navbar({ mobileMenuContent }: NavbarProps) {
   const location = useLocation();
 
   return (
@@ -13,12 +20,27 @@ export default function Navbar() {
         <span className="text-3xl tracking-tight font-semibold text-primary">sei trader</span>
       </Link>
 
-      <div className="flex gap-2 items-center">
-        <Button variant="primary" size="sm" asChild>
+      <div className="flex gap-3 items-center">
+        <Button variant="primary" asChild>
           <Link to="/faucet">
             Faucet
           </Link>
         </Button>
+
+        {mobileMenuContent && (
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="secondary" size="icon" className="border">
+                  <Menu className="size-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80 p-0">
+                {mobileMenuContent}
+              </SheetContent>
+            </Sheet>
+          </div>
+        )}
       </div>
     </nav>
   )

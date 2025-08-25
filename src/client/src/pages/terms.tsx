@@ -34,7 +34,7 @@ export default function TermsPage() {
 
     return (
         <Layout>
-            <div className="min-h-full py-8 px-4 md:px-6">
+            <div className="min-h-full px-6">
                 <div className="max-w-4xl mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -79,7 +79,7 @@ export default function TermsPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: 0.2 }}
-                            className="flex justify-center pt-8"
+                            className="flex justify-center pb-8"
                         >
                             <Button variant="primary" asChild>
                                 <Link to="/">

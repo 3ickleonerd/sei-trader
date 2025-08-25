@@ -10,7 +10,7 @@ export default function HomePage() {
     const isDark = theme === "dark";
     return (
         <Layout>
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col overflow-y-clip">
                 {/* Main Content */}
                 <div className="flex-1 flex items-center justify-center p-4 md:p-6">
                     <div className="w-full lg:max-w-4xl xl:max-w-5xl 2xl:max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
