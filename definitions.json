@@ -167,7 +167,7 @@
         "type": "function"
       }
     ],
-    "address": "0x82b769500e34362a76df81150e12c746093d954f"
+    "address": "0xba492ca1eabaf1bf351b7521260204459adf717b"
   },
   "CaretEscrow": {
     "abi": [
@@ -599,7 +599,7 @@
         "type": "function"
       }
     ],
-    "address": "0x7ef8e99980da5bcedcf7c10f41e55f759f6a174b"
+    "address": "0xb4b786a116d7cf42f32ec2c9530d505cc083b480"
   },
   "tokens": {
     "WSEI": {
@@ -996,7 +996,7 @@
           "type": "function"
         }
       ],
-      "address": "0x77c7e3905c21177be97956c6620567596492c497"
+      "address": "0xbc9215c978474a6f21e0e21024c5a79a5961e2c0"
     },
     "WBTC": {
       "abi": [
@@ -1392,7 +1392,7 @@
           "type": "function"
         }
       ],
-      "address": "0x66db6d191cd163f56197b767928a507df8b47aa7"
+      "address": "0x565a1e32ec1008840b57be09934a16c4053bb83b"
     },
     "iSEI": {
       "abi": [
@@ -1788,7 +1788,7 @@
           "type": "function"
         }
       ],
-      "address": "0xbd3afef4b26918cdb922f9d80aea9b8e64524432"
+      "address": "0xfe0e1b98de8da0500107082dcd4af2d4a6b16ae5"
     },
     "WETH": {
       "abi": [
@@ -2184,7 +2184,7 @@
           "type": "function"
         }
       ],
-      "address": "0x1cfd8455f189c56a4fbd81eb7d4118db04616ba8"
+      "address": "0xb261dbc8bd02101397b665cb3b28f04075e9b338"
     },
     "SEIYAN": {
       "abi": [
@@ -2580,7 +2580,7 @@
           "type": "function"
         }
       ],
-      "address": "0x3200b3e272007a8685b0c66c84eb4c03e7e29ed1"
+      "address": "0xa10e0cf637433f424bd19650907858a766f3b491"
     },
     "FXS": {
       "abi": [
@@ -2976,7 +2976,7 @@
           "type": "function"
         }
       ],
-      "address": "0x591b594f01ae53bff6fb44c5da0a16a62c2f3f6c"
+      "address": "0x0b96d611abf975541cc4ce7662f400366d54be09"
     },
     "ROCK": {
       "abi": [
@@ -3372,7 +3372,7 @@
           "type": "function"
         }
       ],
-      "address": "0x973adb9de34c974c3a421a870203c5be9059e9fa"
+      "address": "0x30b7e130812dc39ead6a61b8c7f88eff1693d88d"
     },
     "MILLI": {
       "abi": [
@@ -3768,7 +3768,7 @@
           "type": "function"
         }
       ],
-      "address": "0x8476fc408b2df4d03e9705fc2768d9179b62800c"
+      "address": "0x1c5e6f95146f4cc5d9e0c600716f2e69e349b179"
     },
     "POPO": {
       "abi": [
@@ -4164,7 +4164,7 @@
           "type": "function"
         }
       ],
-      "address": "0x00bbf6c4102a769076ec39ab0535c5635f2fdd6f"
+      "address": "0xf5e8d253402723ae123a9d0febddae34e3c3ecf5"
     },
     "SPEX": {
       "abi": [
@@ -4560,7 +4560,7 @@
           "type": "function"
         }
       ],
-      "address": "0x239745750870104a7ec6126c89156d773088286c"
+      "address": "0x6e29ce2b363a4c7d0f26465aa66c254a4608f16d"
     },
     "GOKU": {
       "abi": [
@@ -4956,7 +4956,7 @@
           "type": "function"
         }
       ],
-      "address": "0x781da48ea17664d0b53d7645d50c5dae93d27887"
+      "address": "0xd119ff5bbaf6aa81531dc1f75a8fa80463ec1478"
     },
     "NINJA": {
       "abi": [
@@ -5352,7 +5352,7 @@
           "type": "function"
         }
       ],
-      "address": "0x468603d798b4aea92e7aa06493982f22804ebbef"
+      "address": "0xf2e391051a50dc93a89fff23293e5612da8f0526"
     },
     "RED": {
       "abi": [
@@ -5748,7 +5748,7 @@
           "type": "function"
         }
       ],
-      "address": "0xa28e65b0444392c7f591a321f9802d900a3229bc"
+      "address": "0x5ee2733e131d8df2f0c7e8618a9f7c2e16dba939"
     },
     "REX": {
       "abi": [
@@ -6144,7 +6144,7 @@
           "type": "function"
         }
       ],
-      "address": "0xcd1185a97bb3c5b68525aa929be9ca92b50d45f4"
+      "address": "0x363413ad8528db9050e042d9b6bf0d75ad05d9d3"
     },
     "CHUCK": {
       "abi": [
@@ -6540,7 +6540,7 @@
           "type": "function"
         }
       ],
-      "address": "0x3db5ffdbaf393ba7754c424571a57a8e0ab1b0af"
+      "address": "0xf201f1c97d5d163cc64f2a35eee00aa7d81e98ad"
     },
     "USA": {
       "abi": [
@@ -6936,7 +6936,7 @@
           "type": "function"
         }
       ],
-      "address": "0x1ca1d63834ba084d9069e930055ae2a18fa6e274"
+      "address": "0x7fa8cbea4f069c6ce3d39dd3e2c9457be0f560dd"
     },
     "SAKE": {
       "abi": [
@@ -7332,7 +7332,7 @@
           "type": "function"
         }
       ],
-      "address": "0x49eb8c829cb47c0c96e97000bd4bcfbdf089488c"
+      "address": "0xcab15c1ccdca4ca321ad55f082cdb24100616a0a"
     },
     "HOOD": {
       "abi": [
@@ -7728,7 +7728,7 @@
           "type": "function"
         }
       ],
-      "address": "0x624ed29ec9b44fc6bb69d6d2c80883324f20d87d"
+      "address": "0x5793af3b06b7b83f176f28e69ddc3eb01270ee13"
     },
     "COOK": {
       "abi": [
@@ -8124,7 +8124,7 @@
           "type": "function"
         }
       ],
-      "address": "0x1bdfffff5030d4a90d769035f4877e0219fac61d"
+      "address": "0x793ac3a0f8e9a4367c26bd1de68c697314745b6c"
     },
     "CHIPS": {
       "abi": [
@@ -8520,7 +8520,7 @@
           "type": "function"
         }
       ],
-      "address": "0x6402b1b0289ecdafed19114dca601a7b4bf5f21a"
+      "address": "0x6ca9d771046bc9bdf4a528aa4c32bc371db8a37a"
     },
     "YOSHI": {
       "abi": [
@@ -8916,7 +8916,7 @@
           "type": "function"
         }
       ],
-      "address": "0x912bbe2089dd806a607361cae7137a57fc42f02a"
+      "address": "0x62500ed734585c9f1f63f45a18fd81618ef5abe5"
     },
     "WAIT": {
       "abi": [
@@ -9312,7 +9312,7 @@
           "type": "function"
         }
       ],
-      "address": "0x4f4cf3ab238bcfdfbf30388da2636f8f1c8e90d8"
+      "address": "0xc0a5548453db4e8fb39447638f62114f67cf2b5e"
     },
     "POCHITA": {
       "abi": [
@@ -9708,7 +9708,7 @@
           "type": "function"
         }
       ],
-      "address": "0x985060f8b809f08392fb4e23622e9e6881c22d0b"
+      "address": "0xcf6539de341432be132d5309bb339d7a216d113c"
     },
     "Frog": {
       "abi": [
@@ -10104,7 +10104,7 @@
           "type": "function"
         }
       ],
-      "address": "0x143bfb3ee5990f0df7d278fb638a82f37bd6eab1"
+      "address": "0x61bc52ee28f019486285215ab9e0a752248ab914"
     },
     "TRUMP": {
       "abi": [
@@ -10500,7 +10500,7 @@
           "type": "function"
         }
       ],
-      "address": "0x58930ab5658f019e051a005691fee6ceb0691e64"
+      "address": "0x729425b47e29cfc3ce259851c79b703c8213a9d9"
     },
     "FISHW": {
       "abi": [
@@ -10896,7 +10896,7 @@
           "type": "function"
         }
       ],
-      "address": "0x03fb741bfdc7588794d3ecab869b3537adea8394"
+      "address": "0x37e9b55f78f290920e6e1313f452b0892c7e1590"
     },
     "GGC": {
       "abi": [
@@ -11292,7 +11292,7 @@
           "type": "function"
         }
       ],
-      "address": "0x1b735cfdb41c4d371a52faf68b9101731235b92d"
+      "address": "0x75c572d885b06c26b3c939bec14fbf32ecbcd504"
     },
     "APO": {
       "abi": [
@@ -11688,7 +11688,7 @@
           "type": "function"
         }
       ],
-      "address": "0x248dc2b153b14129a77fbe791235f6db8feada73"
+      "address": "0x90e343065da6e67a00598ef35767d30b73f3a579"
     },
     "MAD": {
       "abi": [
@@ -12084,7 +12084,7 @@
           "type": "function"
         }
       ],
-      "address": "0x7746b9a3ce94c95e3118e746af7f2395052296f4"
+      "address": "0xb783a3174a7c352c32cbe61f1be2717b1679f1e1"
     },
     "RAIIN": {
       "abi": [
@@ -12480,7 +12480,7 @@
           "type": "function"
         }
       ],
-      "address": "0xa798f849acbabd9104a6227ec8a601fb9ec91682"
+      "address": "0xea5efd582beb678d7e8aee1f7bb09c86e13deb8f"
     }
   }
 }
