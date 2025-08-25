@@ -59,7 +59,7 @@ const parseValue = (value: string): any => {
 
 // Helper function to read envKeys from env.ts
 async function getEnvKeys(): Promise<string[]> {
-  const envFilePath = path.resolve(process.cwd(), "env.ts");
+  const envFilePath = path.resolve(__dirname, "../../env.ts");
   try {
     const content = await Bun.file(envFilePath).text();
     const match = content.match(/const envKeys = \[([\s\S]*?)\] as const;/);

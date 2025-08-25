@@ -6,6 +6,9 @@ const envKeys = [
   "PORT",
   "SERVER_URL",
   "PVT_KEY",
+  "CLIENT_PORT",
+  "BUN_PUBLIC_SERVER_URL",
+  "BUN_VERSION",
 ] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;
@@ -25,6 +28,8 @@ export function ensureEnv() {
 export const isProd =
   process.env["NODE_ENV"] === "production" ||
   process.env["NODE_ENV"] === "prod";
-if (!isProd) ensureEnv();
+
+// Always ensure environment variables are loaded
+ensureEnv();
 
 export default env;

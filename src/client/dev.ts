@@ -1,3 +1,4 @@
+import env from "../../env";
 import hono from "./api";
 import html from "./src/index.html";
 import { serve } from "bun";
@@ -7,6 +8,8 @@ const server = serve({
     hmr: true,
     console: true,
   },
+
+  port: parseInt(env.CLIENT_PORT),
 
   idleTimeout: 60,
 
