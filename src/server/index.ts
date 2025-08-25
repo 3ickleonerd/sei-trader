@@ -4,6 +4,23 @@ import { bot } from "../telegram";
 import { db } from "../../db";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { isProd } from "../../env";
+
+let staticFileHandler: ((req: Request) => Response | null) | null = null;
+let apiHandler: any = null;
+
+if (isProd) {
+  console.log("🔄 Production mode detected - loading client handlers...");
+  try {
+    const prodModule = await import("../client/prod.ts");
+    staticFileHandler = prodModule.createStaticFileHandler();
+    apiHandler = prodModule.apiHandler;
+    console.log("✅ Client handlers loaded successfully");
+  } catch (error) {
+    console.warn("⚠️  Failed to load production client handlers:", error);
+    console.warn("📝 Make sure to build the client first with: cd src/client && bun run build");
+  }
+}
 
 // Ensure migartions
 const migrationPath = join(process.cwd(), "data", "migrations", "up.sql");
@@ -60,6 +77,17 @@ export default {
           headers: { "Content-Type": "application/json" },
           status: 200,
         });
+      }
+
+      if (isProd && apiHandler && url.pathname.startsWith("/api/v1")) {
+        return apiHandler.fetch(req);
+      }
+    }
+
+    if (isProd && staticFileHandler) {
+      const staticResponse = staticFileHandler(req);
+      if (staticResponse) {
+        return staticResponse;
       }
     }
 
