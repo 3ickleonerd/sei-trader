@@ -44,7 +44,7 @@ M.hooks = {
 M.routes = {
     ["^/api/v1/health$"] = "noopHandler",
     ["^/api/v1/data$"] = "cacheBypassHandler",
-    ["^/static/.*$"] = "serveNothing",
+    ["^/static/.*$"] = "serveStatic",
 }
 
 M.tokens = {
