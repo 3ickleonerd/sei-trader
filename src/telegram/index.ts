@@ -654,7 +654,7 @@ async function handleTradeExecution(
     extractedData.amount ? `$${extractedData.amount}` : "not specified"
   }\n\n`;
   responseMessage +=
-    "⚠️ **Note:** Direct trade execution is not yet implemented. Use your agents for trade suggestions and manual execution.\n\n";
+    "⚠️ **Note:** Direct trade execution are temporarily disabled. Please use suggested trades for now.\n\n";
   responseMessage += "🤖 **Your Available Agents:**\n";
 
   const keyboard = new InlineKeyboard();
