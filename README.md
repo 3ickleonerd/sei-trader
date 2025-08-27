@@ -1,7 +1,7 @@
-<img width="1920" height="1080" alt="Sei Trader (2)" src="https://github.com/user-attachments/assets/badf1a34-43e3-4c68-a0fb-1955f243f6ab" />
+<img width="1920" height="1080" alt="Smart Duck (2)" src="https://github.com/user-attachments/assets/badf1a34-43e3-4c68-a0fb-1955f243f6ab" />
 
-# Sei Trader
-Fast, precise, and intelligent AI-native trading agent, built on Sei.
+# Smart Duck
+Fast, precise, and intelligent AI-native trading agent, built on DuckChain network.
 
 ## Relevant Links:
 - Website: https://seitrader.hetairoi.xyz
@@ -14,12 +14,12 @@ Fast, precise, and intelligent AI-native trading agent, built on Sei.
 - Sei Faucet (Testnet): https://docs.sei.io/learn/faucet
 
 ## What is Sei Trader?
-Sei Trader is a sophisticated, AI-driven cryptocurrency trading bot specifically designed for the **Sei Network**. Built with an AI-first approach, it provides fast, precise, and intelligent trading capabilities leveraging the unique advantages of Sei's infrastructure.
+Smart Duck is a sophisticated, AI-driven cryptocurrency trading bot specifically designed for the **DuckChain network**. Built with an AI-first approach, it provides fast, precise, and intelligent trading capabilities leveraging the unique advantages of DuckChain's infrastructure.
 
 
 ### Key Value Proposition
 - **AI-Native Trading**: Powered by Gemini for advanced market analysis
-- **Sei-Optimized**: Built specifically for Sei Network's high-speed, low-cost environment
+- **DuckChain-Optimized**: Built specifically for DuckChain network's high-speed, low-cost environment
 - **Secure Architecture**: Implements smart contract-based escrow system for fund safety
 - **User-Friendly**: Accessible through an intuitive Telegram bot interface
 
@@ -42,7 +42,7 @@ Sei Trader is a sophisticated, AI-driven cryptocurrency trading bot specifically
 - **Smart Contract Escrow**: Secure fund management through CaretEscrow contracts
 - **Actor-Based Architecture**: Isolated trading accounts for enhanced security
 - **Non-Custodial Design**: Users maintain control of their funds
-- **On-Chain Transparency**: All transactions are verifiable on Sei Network
+- **On-Chain Transparency**: All transactions are verifiable on DuckChain network
 
 
 ### User Interface
@@ -54,19 +54,19 @@ Sei Trader is a sophisticated, AI-driven cryptocurrency trading bot specifically
 
 ### Performance Features
 - **Real-Time Price Data**: CoinGecko API integration with intelligent caching
-- **Fast Execution**: Leverages Sei's sub-second finality
-- **Low-Cost Operations**: Benefits from Sei's minimal transaction fees
+- **Fast Execution**: Leverages DuckChain's sub-second finality
+- **Low-Cost Operations**: Benefits from DuckChain's minimal transaction fees
 - **Scalable Architecture**: Built to handle high-frequency trading operations
 
 
 ---
 
 
-## How Sei Trader Leverages Sei Network
+## How Smart Duck Leverages DuckChain network
 
 
-### Why Sei Network?
-Sei Network is the first **parallelized EVM blockchain**, offering unique advantages for DeFi and trading applications:
+### Why DuckChain network?
+DuckChain network is the first **parallelized EVM blockchain**, offering unique advantages for DeFi and trading applications:
 
 
 1. **Lightning-Fast Finality**: 600ms block times enable rapid trade execution
@@ -121,7 +121,7 @@ The `Agent` class serves as the foundation for all AI trading operations:
 
 #### Market Data Integration
 **Live Market Integration**:
-- **Real-Time Pricing**: Live price feeds for 30+ Sei network tokens
+- **Real-Time Pricing**: Live price feeds for 30+ DuckChain network tokens
 - **Intelligent Caching**: 5-minute cache duration for optimal performance
 - **Background Updates**: Asynchronous data refreshing
 - **Rate Limiting**: Respects API limits with built-in delays
@@ -203,11 +203,11 @@ The Telegram bot provides a rich, interactive interface:
 
 ## Getting Started
 
-1. Start a conversation with the Sei Trader Telegram bot (http://t.me/seitraderofficialbot)
+1. Start a conversation with the Smart Duck Telegram bot (http://t.me/seitraderofficialbot)
 2. Create your first trading agent
 3. Fund your escrow address with USDT & SEI (Use faucets on testnet)
 4. Begin asking for trading advice and execute trades
 
 ---
 
-**Built with ❤️ for the Sei ecosystem** 🌊
+**Built with ❤️ for the DuckChain ecosystem** 🌊
