@@ -7,7 +7,8 @@
     "client:dev": "cd src/client && bun dev",
     "client:build": "cd src/client && bun build",
     "client:start": "cd src/client && bun start",
-    "start": "bun run src/server/index.ts"
+    "start": "bun run src/server/index.ts",
+    "telegram": "bun run src/telegram/index.ts"
   },
   "workspaces": [
     "./evm",

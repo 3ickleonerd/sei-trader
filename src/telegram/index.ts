@@ -10,6 +10,7 @@ import * as viem from "viem";
 
 export const bot = new Bot(env.TG_BOT_TOKEN!);
 
+
 // Add global error handler to prevent server crashes
 bot.catch((err) => {
   console.error("Bot error:", err);
@@ -46,6 +47,8 @@ bot.catch((err) => {
   }
 });
 
+  // Start the Telegram bot
+  bot.start();
 // Helper function to safely format error messages for Telegram
 function formatErrorMessage(error: any): string {
   // Log the full error details to console for debugging
