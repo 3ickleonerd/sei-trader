@@ -23,7 +23,7 @@ export default function HomePage() {
                         >
                             <div className="">
                                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-primary tracking-tight leading-tight">
-                                    smart duck
+                                    Smart Duck
                                 </h1>
                                 <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground leading-relaxed mt-2 md:mt-4">
                                     fast, precise, and secure trading on duckchain
@@ -37,7 +37,7 @@ export default function HomePage() {
                                 className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start"
                             >
                                 <Button variant="primary" size="lg" className="w-full sm:w-auto" asChild>
-                                    <a href="https://t.me/smartduckofficialbot" target="_blank">
+                                    <a href="https://t.me/smart_duckchain_bot" target="_blank">
                                         get started
                                     </a>
                                 </Button>

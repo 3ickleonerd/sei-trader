@@ -4,14 +4,9 @@
 Fast, precise, and intelligent AI-native trading agent, built on DuckChain network.
 
 ## Relevant Links:
-- Website: https://smartduck.hetairoi.xyz
-- Telegram Bot: http://t.me/smartduckofficialbot
+- Website: https://smartduck.hesameri.com
+- Telegram Bot: http://t.me/smart_duckchain_bot
 
-- Dorahacks: https://dorahacks.io/buidl/31702
-- X: https://x.com/SmartDuck
-
-- testUSDT Faucet: https://smartduck.hetairoi.xyz/faucet
-- DuckChain Faucet (Testnet): https://docs.duckchain.io/learn/faucet
 # Smart Duck
 ## What is Smart Duck?
 Smart Duck is a sophisticated, AI-driven cryptocurrency trading bot specifically designed for the **DuckChain network**. Built with an AI-first approach, it provides fast, precise, and intelligent trading capabilities leveraging the unique advantages of DuckChain's infrastructure.
@@ -36,27 +31,13 @@ Smart Duck is a sophisticated, AI-driven cryptocurrency trading bot specifically
 
 ## How Smart Duck Leverages DuckChain network
 
-### Why DuckChain network?
-DuckChain network is the first **parallelized EVM blockchain**, offering unique advantages for DeFi and trading applications:
-
-DuckChain network is the first **parallelized EVM blockchain**, offering unique advantages for DeFi and trading applications:
-1. **Lightning-Fast Finality**: 600ms block times enable rapid trade execution
-2. **Low Transaction Costs**: Minimal fees make frequent trading economically viable
-3. **EVM Compatibility**: Full compatibility with Ethereum tooling and infrastructure
-4. **Parallel Processing**: Handles high throughput for complex trading operations
-
-
 ### Smart Contract Architecture
 
 The main orchestration contract that manages:
 
 Individual escrow contracts for each trading agent:
 
-
-
 ## Backend
-
-
 ### Architecture Overview
 ### 1. Trading Bot AI Engine
 
@@ -125,9 +106,9 @@ The Telegram bot provides a rich, interactive interface:
 
 ## Getting Started
 
-1. Start a conversation with the Smart Duck Telegram bot (http://t.me/smartduckofficialbot)
+1. Start a conversation with the Smart Duck Telegram bot (http://t.me/smart_duckchain_bot)
 2. Create your first trading agent
-3. Fund your escrow address with USDT & DUCK (Use faucets on testnet)
+3. Fund your escrow address with USDT & DUCK
 4. Begin asking for trading advice and execute trades
 
 ---

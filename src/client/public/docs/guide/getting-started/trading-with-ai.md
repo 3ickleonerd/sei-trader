@@ -76,7 +76,7 @@ User: "What's happening in the crypto market today?"
 🌍 Market Overview
 
 📊 Overall Sentiment: Cautiously Optimistic
-📈 Sei Network Trend: +3.2% (24h)
+📈 DuckChain Trend: +3.2% (24h)
 
 🔥 Top Opportunities:
 1. WSEI - Bullish breakout pattern

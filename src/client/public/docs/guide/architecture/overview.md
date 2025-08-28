@@ -2,7 +2,7 @@
 
 ## High-Level Architecture
 
-Sei Trader implements a modular, microservices-inspired architecture designed for scalability, security, and maintainability on the Sei Network.
+Smart Duck implements a modular, microservices-inspired architecture designed for scalability, security, and maintainability on DuckChain.
 
 ```mermaid
 graph TB
@@ -28,7 +28,7 @@ graph TB
         COINGECKO[CoinGecko API]
     end
     
-    subgraph "Sei Network Layer"
+    subgraph "DuckChain Layer"
         ORCH[CaretOrchestrator]
         ESC[CaretEscrow Contracts]
         TOKENS[Token Contracts]
@@ -101,10 +101,10 @@ graph TB
 - **Advanced AI Model**: Top-of-the-line fine-tuned latest AI models for trading analysis
 - **CoinGecko API**: Real-time cryptocurrency market data
 
-### Sei Network Layer
+### DuckChain Layer
 - **CaretOrchestrator**: Main smart contract for agent management
 - **CaretEscrow Contracts**: Secure fund management for each agent
-- **Token Contracts**: ERC-20 token contracts on Sei Network
+- **Token Contracts**: ERC-20 token contracts on DuckChain
 
 ## Technology Stack
 
@@ -112,7 +112,7 @@ graph TB
 - **Runtime**: Bun.js for high-performance JavaScript execution
 - **Database**: SQLite for lightweight, embedded database
 - **AI**: Top-of-the-line fine-tuned latest AI models for advanced analysis
-- **Blockchain**: Sei Network with EVM compatibility
+- **Blockchain**: DuckChain with EVM compatibility
 
 ### Frontend Technologies
 - **Telegram Bot API**: Rich interface with inline keyboards

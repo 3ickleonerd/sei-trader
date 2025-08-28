@@ -2,13 +2,13 @@
 
 ## Deployment Overview
 
-This guide covers the complete deployment process for Sei Trader, from development setup to production deployment on the Sei Network.
+This guide covers the complete deployment process for Smart Duck, from development setup to production deployment on the DuckChain.
 
 ## Development Setup
 
 ### Prerequisites
 
-Before setting up Sei Trader, ensure you have the following installed:
+Before setting up Smart Duck, ensure you have the following installed:
 
 - **Bun.js** (v1.0+): High-performance JavaScript runtime
 - **Node.js** (v18+): For compatibility with some packages
@@ -91,7 +91,7 @@ COINGECKO_API_KEY=your_coingecko_api_key (optional)
 bun run scripts/generate-wallet.ts
 
 # Or use an existing wallet
-# Make sure it has SEI tokens for gas fees
+# Make sure it has $DUCK for gas fees
 ```
 
 ### 3. Database Setup
@@ -188,11 +188,11 @@ bun run verify
 
 ### Contract Deployment
 ```bash
-# Deploy to Sei Testnet
-bun run deploy:testnet
+# Deploy to DuckChain Testnet (deprecated)
+# bun run deploy:testnet
 
-# Deploy to Sei Mainnet (Future)
-# bun run deploy:mainnet
+# Deploy to DuckChain Mainnet
+bun run deploy:mainnet
 
 # Verify contracts on block explorer
 bun run verify:contracts

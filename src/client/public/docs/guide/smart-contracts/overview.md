@@ -2,7 +2,7 @@
 
 ## Contract Architecture Overview
 
-Sei Trader's smart contract system implements a secure, modular architecture for managing trading agents and their associated funds on the Sei Network. The system consists of three core contracts working in harmony to provide a safe, non-custodial trading environment.
+Smart Duck's smart contract system implements a secure, modular architecture for managing trading agents and their associated funds on the DuckChain. The system consists of three core contracts working in harmony to provide a safe, non-custodial trading environment.
 
 ```mermaid
 graph TB
@@ -17,7 +17,7 @@ graph TB
     end
     
     subgraph "External Actors"
-        SERVER[Sei Trader Server]
+        SERVER[Smart Duck Server]
         USER1[User Agent 1]
         USER2[User Agent 2]
         USER3[User Agent N]
@@ -77,7 +77,7 @@ contract CaretOrchestrator {
 constructor(address server_, address usdt_)
 ```
 **Purpose**: Initializes the orchestrator with server and USDT contract addresses
-- `server_`: Address of the authorized Sei Trader server
+- `server_`: Address of the authorized Smart Duck server
 - `usdt_`: Address of the USDT token contract
 
 ##### registerActor
@@ -134,7 +134,7 @@ function registerActor(uint256 owner_, address actor_) external onlyServer
 
 ## Network Integration
 
-### Sei Network Compatibility
+### DuckChain Compatibility
 - **EVM Compatibility**: Full Ethereum Virtual Machine support
 - **Fast Finality**: Sub-second transaction finality
 - **Low Fees**: Minimal transaction costs
@@ -143,4 +143,4 @@ function registerActor(uint256 owner_, address actor_) external onlyServer
 ### Token Standards
 - **ERC-20 Support**: Standard token interface compliance
 - **Wrapped Tokens**: Native tokens wrapped for EVM compatibility
-- **Multi-Token Support**: Support for 30 tokens from the Sei ecosystem, expanding to more
+- **Multi-Token Support**: Support for 30 tokens from the DuckChain ecosystem, expanding to more

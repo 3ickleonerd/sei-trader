@@ -22,7 +22,7 @@ Solutions:
 ❌ Token Not Supported
 
 The token you mentioned isn't currently supported
-by Sei Trader.
+by Smart Duck.
 
 Supported tokens:
 WSEI, WBTC, WETH, iSEI, USDT, USDC, SEIYAN, 
@@ -35,7 +35,7 @@ FXS, ROCK, ASTRO, and 95+ more.
 ```
 ⚠️ Network Congestion Detected
 
-Sei Network is experiencing high traffic.
+DuckChain is experiencing high traffic.
 Estimated delay: 2-5 minutes
 
 Options:
