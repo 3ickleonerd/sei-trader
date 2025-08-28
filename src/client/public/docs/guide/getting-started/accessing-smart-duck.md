@@ -1,18 +1,20 @@
-# Accessing Sei Trader
+# Accessing Smart Duck
 
 ## Telegram Bot Interface
 
-Sei Trader operates through a user-friendly Telegram bot interface. Here's how to get started:
+Smart Duck operates through a user-friendly Telegram bot interface. Here's how to get started:
 
-1. **Find the Bot**: Search for `@SeiTraderBot` on Telegram
+1. **Find the Bot**: Search for `@smart_duckchain_bot` on Telegram
+1. **Find the Bot**: Search for `@smart_duckchain_bot` on Telegram
 2. **Start Conversation**: Send `/start` to begin
 3. **Accept Terms**: Review and accept the Terms & Conditions
 4. **Create Agent**: Set up your first trading agent
 
 ```
-🤖 Welcome to Sei Trader!
+� Welcome to Smart Duck!
 
-🎯 AI-powered trading for the Sei Network
+� AI-powered trading for the DuckChain network
+🏆 AI-powered trading for the DuckChain network
 ⚡ Fast, precise, and intelligent trading decisions
 🔒 Secure escrow system for your funds
 

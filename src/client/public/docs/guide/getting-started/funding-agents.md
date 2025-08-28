@@ -2,10 +2,10 @@
 
 ## 🚀 Quick Start - Get Test Tokens
 
-**Currently deployed on Sei Testnet with test tokens available to trade. We provide test USDT - no real money involved.**
+**Currently deployed on DuckChain Mainnet with real tokens available to trade. We provide USDT - no real money involved.**
 
-1. **Test USDT Faucet**: https://seitrader.hetairoi.xyz/faucet
-2. **SEI Faucet**: https://docs.sei.io/learn/faucet
+1. **USDT Faucet**: https://smartduck.hetairoi.xyz/faucet
+2. **DuckChain Faucet**: https://docs.duckchain.io/learn/faucet
 
 ## USDT Funding Process
 
@@ -13,23 +13,23 @@ Before your agent can trade, you need to fund its escrow contract with USDT:
 
 ### Option 1: Direct Transfer
 1. Send USDT to your escrow address from any wallet
-2. Use the Sei Network (ensure EVM compatibility)
+2. Use the DuckChain Mainnet (ensure EVM compatibility)
 3. Wait for transaction confirmation
 
 ### Option 2: Exchange Transfer
 1. Use a supported exchange (if available)
 2. Withdraw USDT to your escrow address
-3. Select Sei Network as the destination
+3. Select DuckChain Mainnet as the destination
 
 ```
 💳 Funding Instructions
 
-Network: Sei Testnet
+Network: DuckChain Mainnet
 Token: USDT (ERC-20)
 Address: 0x742d35Cc6535C0532925a3b8D93632...
 
 ⚠️ Important:
-- Only send USDT on Sei Network
+- Only send USDT on DuckChain Mainnet
 - Double-check the address
 - Minimum funding: 10 USDT
 
@@ -56,13 +56,13 @@ Address: 0x742d35Cc6535C0532925a3b8D93632...
 - **Production Trading**: 500+ USDT for serious trading
 
 ### Network Requirements
-- **Network**: Sei Network (EVM compatible)
+- **Network**: DuckChain Mainnet (EVM compatible)
 - **Token**: USDT (ERC-20 standard)
-- **Gas Fees**: Paid in SEI tokens
+- **Gas Fees**: Paid in TON tokens
 
 ### Security Considerations
 - Always verify the escrow address
-- Use official Sei Network RPC endpoints
+- Use official DuckChain Mainnet RPC endpoints
 - Double-check network selection on exchanges
 - Keep transaction records for verification
 
@@ -79,7 +79,7 @@ Address: 0x742d35Cc6535C0532925a3b8D93632...
 - **Daily Limit**: 1000 USDT (default)
 - **Maximum Per Transaction**: 500 USDT
 - **Processing Time**: 1-5 minutes
-- **Gas Fees**: ~0.01 SEI per withdrawal
+- **Gas Fees**: ~0.01 TON per withdrawal
 
 ## Transaction History
 
@@ -87,7 +87,7 @@ Address: 0x742d35Cc6535C0532925a3b8D93632...
 📈 Transaction History: DeFi_Trader
 
 🟢 2024-01-15 14:30
-   Bought 50 WSEI @ $0.42
+   Bought 50 WDUCK @ $0.42
    Value: $21.00
 
 🟢 2024-01-14 09:15  

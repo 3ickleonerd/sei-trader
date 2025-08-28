@@ -178,6 +178,9 @@ console.log("\n🚀 Starting build process...\n");
     }
   }
 
+  defineEnv[`process.env.BUN_PUBLIC_SERVER_URL`] = "http://localhost:5000"
+  defineEnv[`process.env.BUN_VERSION`] = "1.2.21"
+
   // Build all the HTML files
   const result = await build({
     entrypoints,

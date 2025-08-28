@@ -602,7 +602,7 @@ const definitions = {
     "address": "0xb4b786a116d7cf42f32ec2c9530d505cc083b480"
   },
   "tokens": {
-    "WSEI": {
+  "WDUCK": {
       "abi": [
         {
           "inputs": [
@@ -1394,7 +1394,7 @@ const definitions = {
       ],
       "address": "0x565a1e32ec1008840b57be09934a16c4053bb83b"
     },
-    "iSEI": {
+  "iDUCK": {
       "abi": [
         {
           "inputs": [
@@ -2186,7 +2186,7 @@ const definitions = {
       ],
       "address": "0xb261dbc8bd02101397b665cb3b28f04075e9b338"
     },
-    "SEIYAN": {
+  "DUCKYAN": {
       "abi": [
         {
           "inputs": [

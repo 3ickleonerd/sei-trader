@@ -1,7 +1,7 @@
 import * as viem from "viem";
-import { hardhat, seiTestnet } from "viem/chains";
+import { hardhat } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-
+import { duckchainMainnnet } from "../duckchainMainnet";
 import CaretOrchestrator from "../artifacts/src/CaretOrchestrator.sol/CaretOrchestrator.json";
 import CaretEscrow from "../artifacts/src/CaretEscrow.sol/CaretEscrow.json";
 import USDT from "../artifacts/src/usdt.sol/USDT.json";
@@ -9,7 +9,7 @@ import TestToken from "../artifacts/src/TestToken.sol/TestToken.json";
 import { tokens } from "../../src/bot/tokens";
 
 const networkArg = Bun.argv[2];
-const isSei = networkArg === "sei";
+const isDuck = networkArg === "duck";
 
 const privateKey = Bun.env.PRIVATE_KEY_1;
 if (!privateKey || !viem.isHex(privateKey)) {
@@ -17,13 +17,13 @@ if (!privateKey || !viem.isHex(privateKey)) {
 }
 
 const getChain = () => {
-  if (isSei) return seiTestnet;
+  if (isDuck) return duckchainMainnnet;
   return hardhat;
 };
 
 const getAccount = () => {
-  if (isSei) return privateKeyToAccount(privateKey);
-
+  if (isDuck) return privateKeyToAccount(privateKey);
+  // fallback:
   return privateKeyToAccount(
     "0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e"
   );

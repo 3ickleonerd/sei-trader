@@ -2,7 +2,7 @@
 
 ## Natural Language Trading
 
-Sei Trader understands natural language! You can ask questions like:
+Smart Duck understands natural language! You can ask questions like:
 
 ### Market Analysis:
 - "What's the best crypto to trade right now?"

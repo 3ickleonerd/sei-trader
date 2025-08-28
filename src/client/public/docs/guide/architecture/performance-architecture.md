@@ -61,20 +61,20 @@ const dbConfig = {
 
 ## Network Architecture
 
-### Sei Network Integration
+### DuckChain Network Integration
 
 #### Chain Configuration
 ```typescript
 // Network configuration
-export const primaryChain = isProd ? seiTestnet : hardhat;
+export const primaryChain = isProd ? duckTestnet : hardhat;
 
-const seiConfig = {
-  chainId: 713715, // Sei Testnet
+const duckchainConfig = {
+  chainId: 123456, // DuckChain Testnet
   blockTime: 600, // ~600ms average
   finalityTime: 600, // Fast finality
   gasPrice: "minimal", // Low fees
   rpcUrls: {
-    default: { http: ["https://evm-rpc-testnet.sei-apis.com"] }
+    default: { http: ["https://evm-rpc-testnet.duckchain.xyz"] }
   }
 };
 ```

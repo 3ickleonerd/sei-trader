@@ -1,14 +1,15 @@
 import * as viem from "viem";
-import { hardhat, seiTestnet } from "viem/chains";
+import { hardhat } from "viem/chains";
 import env, { isProd } from "./env";
 import { privateKeyToAccount } from "viem/accounts";
 import definitions from "./definitions";
+import { duckchainMainnet } from "./evm/duckchainMainnet"
 
 if (!viem.isHex(env.PVT_KEY)) {
   throw new Error("Invalid private key");
 }
 
-export const primaryChain = isProd ? seiTestnet : hardhat;
+export const primaryChain = isProd ? duckchainMainnet : hardhat;
 
 export const evmClient = viem
   .createWalletClient({

@@ -5,7 +5,7 @@
     "db:push": "bun db:generate; bun db:migrate",
     "server:dev": "bun run src/server/index.ts --watch",
     "client:dev": "cd src/client && bun dev",
-    "client:build": "cd src/client && bun build",
+    "client:build": "cd src/client && bun run build",
     "client:start": "cd src/client && bun start",
     "start": "bun run src/server/index.ts",
     "telegram": "bun run src/telegram/index.ts"

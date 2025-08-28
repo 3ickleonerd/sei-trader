@@ -1,5 +1,5 @@
 {
-  "name": "@sei-trader/client",
+  "name": "@smart-duck/client",
   "version": "1.0.0",
   "type": "module",
   "main": "prod.ts",

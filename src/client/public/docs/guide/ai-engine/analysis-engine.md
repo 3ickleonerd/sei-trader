@@ -188,7 +188,7 @@ const systemPrompts = {
   - Technical analysis and chart patterns
   - Risk management and position sizing
   - Market sentiment analysis
-  - Sei Network ecosystem tokens
+  - DuckChain network ecosystem tokens
   
   Always provide:
   - Clear entry/exit points
@@ -206,7 +206,7 @@ const systemPrompts = {
   - Overall market sentiment and trends
   - Sector rotation and capital flows
   - Economic factors affecting crypto markets
-  - Sei Network specific developments`
+  - DuckChain network specific developments`
 };
 ```
 
@@ -249,7 +249,7 @@ interface TradingMetrics {
 ## Future Enhancements
 
 ### Machine Learning Integration
-- **Custom Models**: Train specialized models on Sei ecosystem data
+- **Custom Models**: Train specialized models on DuckChain ecosystem data
 - **Sentiment Analysis**: Social media and news sentiment integration
 - **Pattern Recognition**: Advanced chart pattern detection
 - **Predictive Analytics**: Price movement forecasting

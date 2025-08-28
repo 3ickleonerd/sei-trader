@@ -17,6 +17,6 @@ bun run build
 echo "🖼️ restarting Server..."
 cd ../..
 bun install
-pm2 restart seitrader || pm2 start --name seitrader -- bun run start
+pm2 restart smartduck || pm2 start --name smartduck -- bun run start
 
 echo "✅ Deploy complete!"

@@ -2,7 +2,7 @@
 
 ## AI Engine Overview
 
-The Sei Trader AI Engine is the cognitive core of the platform, powered by top-of-the-line fine-tuned latest AI models. It transforms natural language queries into sophisticated trading insights and actionable recommendations through advanced market analysis and risk assessment.
+The Smart Duck AI Engine is the cognitive core of the platform, powered by top-of-the-line fine-tuned latest AI models. It transforms natural language queries into sophisticated trading insights and actionable recommendations through advanced market analysis and risk assessment.
 
 ```mermaid
 graph TB

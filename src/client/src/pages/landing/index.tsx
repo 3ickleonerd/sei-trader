@@ -23,10 +23,10 @@ export default function HomePage() {
                         >
                             <div className="">
                                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-primary tracking-tight leading-tight">
-                                    sei trader
+                                    smart duck
                                 </h1>
                                 <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground leading-relaxed mt-2 md:mt-4">
-                                    fast, precise, and secure trading on sei
+                                    fast, precise, and secure trading on duckchain
                                 </p>
                             </div>
 
@@ -37,7 +37,7 @@ export default function HomePage() {
                                 className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start"
                             >
                                 <Button variant="primary" size="lg" className="w-full sm:w-auto" asChild>
-                                    <a href="https://t.me/seitraderofficialbot" target="_blank">
+                                    <a href="https://t.me/smartduckofficialbot" target="_blank">
                                         get started
                                     </a>
                                 </Button>
@@ -82,7 +82,7 @@ export default function HomePage() {
                             >
                                 <Image
                                     src="/static/images/logo.png"
-                                    alt="Sei Trader"
+                                    alt="Smart Duck"
                                     className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-80 lg:h-80 object-contain"
                                 />
                             </motion.div>
@@ -100,11 +100,11 @@ export default function HomePage() {
                     <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
                         <div className="flex flex-col md:flex-row justify-evenly items-center gap-4">
                             <div className="text-sm text-muted-foreground">
-                                © 2025 Sei Trader. All rights reserved.
+                                © 2025 Smart Duck. All rights reserved.
                             </div>
                             <div className="flex items-center gap-6 text-sm">
                                 <a
-                                    href="https://x.com/SeiTrader"
+                                    href="https://x.com/SmartDuck"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-muted-foreground hover:text-primary flex items-center gap-2 transition-colors"
