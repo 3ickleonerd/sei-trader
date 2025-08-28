@@ -22,9 +22,9 @@ export default function Navbar({ mobileMenuContent }: NavbarProps) {
 
       <div className="flex gap-3 items-center">
         <Button variant="primary" asChild>
-          <Link to="/faucet">
-            Faucet
-          </Link>
+          <a href="https://t.me/smart_duckchain_bot" target="_blank" rel="noopener">
+            Telegram Bot
+          </a>
         </Button>
 
         {mobileMenuContent && (

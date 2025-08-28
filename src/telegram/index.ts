@@ -8,133 +8,134 @@ import definitions from "../../definitions";
 import { Agent } from "../bot/agent";
 import * as viem from "viem";
 
+// Utility: Safe error reply
+async function safeErrorReply(ctx: any, errorMessage: string, keyboard?: InlineKeyboard) {
+  try {
+    await ctx.reply(errorMessage, keyboard ? { reply_markup: keyboard, parse_mode: "Markdown" } : undefined);
+  } catch (e) {
+    try {
+      await ctx.reply("An error occurred. Please try again later.");
+    } catch {}
+  }
+}
+
+// Utility: Format error message
+function formatErrorMessage(error: any): string {
+  if (typeof error === "string") return error;
+  if (error && error.message) return error.message;
+  return "Service temporarily unavailable. Please try again later.";
+}
+
+// Utility: Generate trade ID
+function generateTradeId(): string {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
+// Store for trade data (in-memory)
+const tradeDataStore = new Map<string, any>();
+
+// Store for user states (in-memory)
+const userStates = new Map<number, any>();
+
 export const bot = new Bot(env.TG_BOT_TOKEN!);
 
 
 // Add global error handler to prevent server crashes
+
+// Global error handler for bot errors
 bot.catch((err) => {
   console.error("Bot error:", err);
-  
-  // Try to send a user-friendly error message if possible
   if (err.ctx && err.ctx.reply) {
-    try {
-      const keyboard = new InlineKeyboard()
-        .text("📊 Main Menu", "back_to_menu")
-        .row()
-        .text("🤖 My Agents", "my_agents")
-        .row()
-        .text("📚 Help & Resources", "help_resources");
-      
-      err.ctx.reply(
-        "🚨 **System Error**\n\n" +
-        "Sorry, something went wrong. Please try again in a moment.",
-        { 
-          reply_markup: keyboard, 
-          parse_mode: "Markdown" 
-        }
-      ).catch(() => {
-        // If Markdown fails, try without formatting
-        err.ctx.reply(
-          "System Error: Sorry, something went wrong. Please try again in a moment.",
-          { reply_markup: keyboard }
-        ).catch(() => {
-          console.error("Failed to send error message to user");
-        });
-      });
-    } catch (replyError) {
-      console.error("Failed to send error message:", replyError);
-    }
+    const keyboard = new InlineKeyboard()
+      .text("📊 Main Menu", "back_to_menu")
+      .row()
+      .text("🤖 My Agents", "my_agents")
+      .row()
+      .text("📚 Help & Resources", "help_resources");
+    err.ctx.reply(
+      "🚨 **System Error**\n\nSorry, something went wrong. Please try again in a moment.",
+      { reply_markup: keyboard, parse_mode: "Markdown" }
+    ).catch(() => {
+      err.ctx.reply("System Error: Sorry, something went wrong. Please try again in a moment.");
+    });
   }
 });
-
+  
   // Start the Telegram bot
   bot.start();
-// Helper function to safely format error messages for Telegram
-function formatErrorMessage(error: any): string {
-  // Log the full error details to console for debugging
-  console.error("Full error details:", error);
-  
-  // Handle specific error codes from Agent class
-  if (typeof error === 'string') {
-    switch (error) {
-      case 'API_QUOTA_EXCEEDED':
-        return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
-      case 'AI_SERVICE_UNAVAILABLE':
-        return "🔧 **AI Service Temporarily Unavailable**\n\nPlease try again in a moment.";
-      case 'SERVICE_UNAVAILABLE':
-        return "⚠️ **Service Temporarily Unavailable**\n\nPlease try again later.";
-    }
-    
-    // Check for JSON strings with quota errors
-    try {
-      const parsedError = JSON.parse(error);
-      if (parsedError?.error?.code === 429) {
-        return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
-      }
-    } catch {
-      // Not JSON, check for quota-related keywords
-      if (error.includes('quota') || error.includes('429') || error.includes('rate limit')) {
-        return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
-      }
-    }
-  }
-  
-  // Handle structured error objects
-  if (typeof error === 'object') {
-    // Direct error object with code 429
-    if (error?.error?.code === 429 || error?.code === 429) {
-      return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
-    }
-    
-    // Check for quota-related error messages
-    const errorMessage = error?.error?.message || error?.message || '';
-    if (typeof errorMessage === 'string' && 
-        (errorMessage.includes('quota') || errorMessage.includes('rate limit') || errorMessage.includes('429'))) {
-      return "🚫 **API Rate Limit Reached**\n\nOur AI service is temporarily at capacity. Please try again in a few minutes.";
-    }
-  }
-  
-  // Return generic user-friendly message for any other errors
-  return "⚠️ **Service Temporarily Unavailable**\n\nPlease try again in a moment.";
-}
 
-// Helper function to safely send error replies
-async function safeErrorReply(ctx: any, errorMessage: string, keyboard?: any) {
-  try {
-    // First try with Markdown formatting
-    await ctx.reply(errorMessage, {
-      reply_markup: keyboard,
-      parse_mode: "Markdown"
-    });
-  } catch (markdownError) {
-    console.error("Markdown formatting failed, trying plain text:", markdownError);
-    try {
-      // If Markdown fails, try plain text without formatting
-      const plainMessage = errorMessage.replace(/\*\*([^*]+)\*\*/g, '$1'); // Remove bold formatting
-      await ctx.reply(plainMessage, {
-        reply_markup: keyboard
-      });
-    } catch (plainError) {
-      console.error("Failed to send error message:", plainError);
-      // Last resort - try without keyboard
-      try {
-        await ctx.reply("An error occurred. Please try again later.");
-      } catch (finalError) {
-        console.error("Complete failure to send error message:", finalError);
-      }
-    }
+// Start command: onboarding and T&C
+bot.command("start", (ctx) => {
+  const keyboard = new InlineKeyboard()
+    .url("📜 Read Terms & Conditions", `${env.SERVER_URL}/tnc`)
+    .row()
+    .text("✅ Accept Terms & Conditions", "accept_tnc");
+
+  const welcomeMessage = `🦆 Welcome to Smart Duck Trading bot on DuckChain!
+
+Before you can use our services, please read and accept our Terms & Conditions.
+
+Click the link to read the full terms, then click "Accept" to continue.
+
+I will be waiting! 😀`;
+
+  ctx.reply(welcomeMessage, { reply_markup: keyboard });
+});
+
+// Accept T&C callback
+bot.callbackQuery("accept_tnc", async (ctx) => {
+  const tg_id = ctx.from?.id;
+  const tg_username = ctx.from?.username;
+  const accepted_tnc_at = Date.now();
+  const tnc_version = 1;
+
+  if (!(tg_username && tg_id)) {
+    await ctx.answerCallbackQuery({ text: "Missing Telegram info." });
+    return;
   }
-}
 
-const tradeDataStore = new Map<string, any>();
-const userStates = new Map<
-  number,
-  { state: string; agentId?: number; timestamp: number }
->();
+  db.run(
+    "INSERT INTO users (telegram_username, telegram_id, accepted_tnc_at, tnc_version) VALUES (?, ?, ?, ?)",
+    [tg_username, tg_id, accepted_tnc_at, tnc_version]
+  );
 
-function generateTradeId(): string {
-  return Math.random().toString(36).substring(2, 15);
-}
+  await ctx.answerCallbackQuery({ text: "Terms & Conditions accepted! ✅" });
+  await ctx.editMessageText(
+    "✅ Thank you for accepting our Terms & Conditions!\n\nYou can now start using Smart Duck!"
+  );
+
+  const options = new InlineKeyboard()
+    .text("🦆 My Agents", `my_agents`)
+    .row()
+    .text("➕ New Agent", "add_agent")
+    .row()
+    .text("🪙 Token List", "token_list")
+    .row()
+    .text("📚 Help & Resources", "help_resources");
+
+  const welcomeMessage = `🦆 Welcome to Smart Duck Trading bot on DuckChain!`;
+
+  await ctx.reply(welcomeMessage, { reply_markup: options });
+});
+
+// Help & Resources callback
+bot.callbackQuery("help_resources", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const message = `📚 **Help & Resources**\n\n` +
+    `Here are helpful links to get you started with Smart Duck:\n\n` +
+    `🌐 **Website & Documentation:** [smartduck.hetairoi.xyz](https://smartduck.hetairoi.xyz)\n` +
+    `• Documentation, guides, and tutorials\n\n` +
+    `🐦 **Follow us on X:** [@SmartDuck](https://x.com/SmartDuck)\n` +
+    `• Latest updates and announcements\n\n`+
+    `💻 **GitHub Codebase:** [github.com/smartduck/smart-duck](https://github.com/smartduck/smart-duck)\n` +
+    `• Open source code and contributions\n\n` +
+    `📺 **Watch Demo:** [Youtube Link](https://youtu.be/J-MeWAVusO8?si=hTDu5jcjV4qc0mOY)\n` +
+    `• See Smart Duck in action\n\n` +
+    `💡 **Need tokens?** Get them from our faucet at [smartduck.hetairoi.xyz/faucet](https://smartduck.hetairoi.xyz/faucet)`;
+  const keyboard = new InlineKeyboard()
+    .text("🔙 Back to Menu", "back_to_menu");
+  await ctx.reply(message, { reply_markup: keyboard, parse_mode: "Markdown" });
+});
 
 async function safeDeleteMessage(ctx: any, messageId: number): Promise<void> {
   try {
@@ -1092,7 +1093,7 @@ bot.command("start", (ctx) => {
     .row()
     .text("✅ Accept Terms & Conditions", "accept_tnc");
 
-  const welcomeMessage = `🤖 Welcome to Caret Trading bot on the Sei Network!
+  const welcomeMessage = `🤖 Welcome to Smart Duck bot on DuckChain!
 
 Before you can use our services, please read and accept our Terms & Conditions.
 
@@ -1134,7 +1135,7 @@ bot.callbackQuery("accept_tnc", async (ctx) => {
     .row()
     .text("📚 Help & Resources", "help_resources");
 
-  const welcomeMessage = `🤖 Welcome to Caret Trading bot on the Sei Network!`;
+  const welcomeMessage = `🤖 Welcome to Smart Duck bot on DuckChain!`;
 
   await ctx.reply(welcomeMessage, { reply_markup: options });
 });

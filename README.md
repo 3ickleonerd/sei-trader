@@ -1,4 +1,4 @@
-<img width="1920" height="1080" alt="Smart Duck (2)" src="https://github.com/user-attachments/assets/badf1a34-43e3-4c68-a0fb-1955f243f6ab" />
+![Smart Duck](src/client/public/images/banner.png)
 
 # Smart Duck
 Fast, precise, and intelligent AI-native trading agent, built on DuckChain network.
