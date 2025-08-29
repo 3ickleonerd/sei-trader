@@ -61,8 +61,8 @@ bot.catch((err) => {
   }
 });
   
-  // Start the Telegram bot
-  bot.start();
+// Start the Telegram bot
+bot.start();
 
 // Start command: onboarding and T&C
 bot.command("start", (ctx) => {
@@ -123,15 +123,11 @@ bot.callbackQuery("help_resources", async (ctx) => {
   await ctx.answerCallbackQuery();
   const message = `📚 **Help & Resources**\n\n` +
     `Here are helpful links to get you started with Smart Duck:\n\n` +
-    `🌐 **Website & Documentation:** [smartduck.hetairoi.xyz](https://smartduck.hetairoi.xyz)\n` +
+    `🌐 **Website & Documentation:** [smartduck.hesameri.com](https://smartduck.hesameri.com)\n` +
     `• Documentation, guides, and tutorials\n\n` +
-    `🐦 **Follow us on X:** [@SmartDuck](https://x.com/SmartDuck)\n` +
-    `• Latest updates and announcements\n\n`+
     `💻 **GitHub Codebase:** [github.com/smartduck/smart-duck](https://github.com/smartduck/smart-duck)\n` +
     `• Open source code and contributions\n\n` +
-    `📺 **Watch Demo:** [Youtube Link](https://youtu.be/J-MeWAVusO8?si=hTDu5jcjV4qc0mOY)\n` +
-    `• See Smart Duck in action\n\n` +
-    `💡 **Need tokens?** Get them from our faucet at [smartduck.hetairoi.xyz/faucet](https://smartduck.hetairoi.xyz/faucet)`;
+    `📺 **Watch Demo:** [Youtube Link](https://youtu.be/J-MeWAVusO8?si=hTDu5jcjV4qc0mOY)\n`;
   const keyboard = new InlineKeyboard()
     .text("🔙 Back to Menu", "back_to_menu");
   await ctx.reply(message, { reply_markup: keyboard, parse_mode: "Markdown" });
@@ -242,20 +238,20 @@ async function executeTrade(
       }
     }
 
-    const actorSeiBalance = await actorClient.getBalance({
+    const actorDuckBalance = await actorClient.getBalance({
       address: actorClient.account.address,
     });
 
-    const minSeiForGas = BigInt(1000000000000000);
+    const minDuckForGas = BigInt(1000000000000000);
 
-    if (actorSeiBalance < minSeiForGas) {
+    if (actorDuckBalance < minDuckForGas) {
       return {
         success: false,
-        error: `Insufficient SEI for gas fees. Actor has ${
-          Number(actorSeiBalance) / 10 ** 18
-        } SEI, but needs at least ${
-          Number(minSeiForGas) / 10 ** 18
-        } SEI. Please fund the actor address with SEI.`,
+        error: `Insufficient DUCK for gas fees. Actor has ${
+          Number(actorDuckBalance) / 10 ** 18
+        } DUCK, but needs at least ${
+          Number(minDuckForGas) / 10 ** 18
+        } DUCK. Please fund the actor address with DUCK.`,
       };
     }
 
@@ -432,7 +428,7 @@ async function getUSDTBalance(escrowAddress: string): Promise<string> {
   }
 }
 
-async function getSEIBalance(address: string): Promise<string> {
+async function getDuckBalance(address: string): Promise<string> {
   try {
     const balance = await evmClient.getBalance({
       address: address as `0x${string}`,
@@ -441,7 +437,7 @@ async function getSEIBalance(address: string): Promise<string> {
     const balanceFormatted = Number(balance) / Math.pow(10, 18);
     return balanceFormatted.toFixed(4);
   } catch (error) {
-    console.error("Error fetching SEI balance:", error);
+    console.error("Error fetching DUCK balance:", error);
     return "0.0000";
   }
 }
@@ -455,15 +451,15 @@ async function getActorAddress(
   return actorClient.account.address;
 }
 
-async function getActorSEIBalance(
+async function getActorDuckBalance(
   userId: number,
   agentName: string
 ): Promise<string> {
   try {
     const actorAddress = await getActorAddress(userId, agentName);
-    return await getSEIBalance(actorAddress);
+    return await getDuckBalance(actorAddress);
   } catch (error) {
-    console.error("Error fetching actor SEI balance:", error);
+    console.error("Error fetching actor DUCK balance:", error);
     return "0.0000";
   }
 }
@@ -474,12 +470,12 @@ async function getAllTokenBalances(
   const balances: Array<{ symbol: string; balance: string; name: string }> = [];
 
   try {
-    const seiBalance = await getSEIBalance(escrowAddress);
-    if (parseFloat(seiBalance) > 0) {
+    const duckBalance = await getDuckBalance(escrowAddress);
+    if (parseFloat(duckBalance) > 0) {
       balances.push({
-        symbol: "SEI",
-        balance: seiBalance,
-        name: "SEI",
+        symbol: "DUCK",
+        balance: duckBalance,
+        name: "DUCK",
       });
     }
 
@@ -798,16 +794,16 @@ async function executeDirectTrade(
   try {
     // Check funding status first
     const usdtBalance = await getUSDTBalance(agent.escrow_address);
-    const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
+    const actorDuckBalance = await getActorDuckBalance(userId, agent.agent_name);
 
     const hasUsdt = parseFloat(usdtBalance) > 0;
-    const hasSei = parseFloat(actorSeiBalance) > 0;
+    const hasDuck = parseFloat(actorDuckBalance) > 0;
 
-    if (!hasUsdt || !hasSei) {
+    if (!hasUsdt || !hasDuck) {
       const actorAddress = await getActorAddress(userId, agent.agent_name);
 
       let message = "❌ **Cannot execute trade**\n\n";
-      message += "Your agent needs both USDT and SEI to execute trades:\n\n";
+      message += "Your agent needs both USDT and DUCK to execute trades:\n\n";
 
       if (!hasUsdt) {
         message += `🏦 **Missing USDT** in escrow\n`;
@@ -816,11 +812,11 @@ async function executeDirectTrade(
         message += `✅ USDT available in escrow: ${usdtBalance} USDT\n\n`;
       }
 
-      if (!hasSei) {
-        message += `⚡ **Missing SEI** for gas fees\n`;
-        message += `Send SEI to: \`${actorAddress}\`\n\n`;
+      if (!hasDuck) {
+        message += `⚡ **Missing DUCK** for gas fees\n`;
+        message += `Send DUCK to: \`${actorAddress}\`\n\n`;
       } else {
-        message += `✅ SEI available for gas: ${actorSeiBalance} SEI\n\n`;
+        message += `✅ DUCK available for gas: ${actorDuckBalance} DUCK\n\n`;
       }
 
       message += "💡 Use the 'Fund Agent' button to get funding instructions.";
@@ -1174,8 +1170,8 @@ bot.callbackQuery("my_agents", async (ctx) => {
   for (let index = 0; index < agents.length; index++) {
     const agent: any = agents[index];
     const usdtBalance = await getUSDTBalance(agent.escrow_address);
-    const escrowSeiBalance = await getSEIBalance(agent.escrow_address);
-    const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
+    const escrowDuckBalance = await getDuckBalance(agent.escrow_address);
+    const actorDuckBalance = await getActorDuckBalance(userId, agent.agent_name);
 
     message += `${index + 1}. **${agent.agent_name}**\n`;
     message += `   📝 Instructions: ${agent.instructions.substring(0, 100)}${
@@ -1183,7 +1179,7 @@ bot.callbackQuery("my_agents", async (ctx) => {
     }\n`;
     message += `   🏦 Escrow: \`${agent.escrow_address}\`\n`;
     message += `   💰 USDT Balance (Escrow): **${usdtBalance} USDT**\n`;
-    message += `   ⛽ SEI Balance (Actor): **${actorSeiBalance} SEI**\n\n`;
+    message += `   ⛽ DUCK Balance (Actor): **${actorDuckBalance} DUCK**\n\n`;
 
     keyboard.text(`🔧 ${agent.agent_name}`, `agent_${agent.id}`).row();
   }
@@ -1192,8 +1188,8 @@ bot.callbackQuery("my_agents", async (ctx) => {
   message +=
     "To enable trading, you need to fund TWO addresses:\n" +
     "1. **Escrow**: Send **USDT** to the escrow address (shown above) for buying tokens\n" +
-    "2. **Actor**: Send **SEI** to the actor address for gas fees (get address from 'Fund Agent')\n\n" +
-    "⚠️ **Both USDT and SEI must be available for trades to execute!**\n\n";
+    "2. **Actor**: Send **DUCK** to the actor address for gas fees (get address from 'Fund Agent')\n\n" +
+    "⚠️ **Both USDT and DUCK must be available for trades to execute!**\n\n";
 
   keyboard.text("➕ Add New Agent", "add_agent").row();
   keyboard.text("📚 Help & Resources", "help_resources").row();
@@ -1252,7 +1248,7 @@ bot.callbackQuery("back_to_menu", async (ctx) => {
     .row()
     .text("📚 Help & Resources", "help_resources");
 
-  const welcomeMessage = `🤖 Welcome to Caret Trading bot on the Sei Network!`;
+  const welcomeMessage = `🤖 Welcome to Caret Trading bot on the DUCK Network!`;
 
   await ctx.reply(welcomeMessage, { reply_markup: options });
 });
@@ -1261,16 +1257,12 @@ bot.callbackQuery("help_resources", async (ctx) => {
   await ctx.answerCallbackQuery();
 
   const message = `📚 **Help & Resources**\n\n` +
-    `Here are helpful links to get you started with Sei Trader:\n\n` +
-    `🌐 **Website & Documentation:** [seitrader.hetairoi.xyz](https://seitrader.hetairoi.xyz)\n` +
+    `Here are helpful links to get you started with DUCK Trader:\n\n` +
+    `🌐 **Website & Documentation:** [smartduck.hesameri.com](https://smartduck.hesameri.com)\n` +
     `• Documentation, guides, and tutorials\n\n` +
-    `🐦 **Follow us on X:** [@SeiTrader](https://x.com/SeiTrader)\n` +
-    `• Latest updates and announcements\n\n`+
-    `💻 **GitHub Codebase:** [github.com/caret-sei/sei-trader](https://github.com/caret-sei/sei-trader)\n` +
+    `💻 **GitHub Codebase:** [github.com/](https://github.com/)\n` +
     `• Open source code and contributions\n\n` +
-    `📺 **Watch Demo:** [Youtube Link](https://youtu.be/J-MeWAVusO8?si=hTDu5jcjV4qc0mOY)\n` +
-    `• See SeiTrader in action\n\n` +
-    `💡 **Need tokens?** Get them from our faucet at [seitrader.hetairoi.xyz/faucet](https://seitrader.hetairoi.xyz/faucet)`;
+    `📺 **Watch Demo:** [Youtube Link](https://youtu.be/J-MeWAVusO8?si=hTDu5jcjV4qc0mOY)\n`;
 
   const keyboard = new InlineKeyboard()
     .text("🔙 Back to Menu", "back_to_menu");
@@ -1485,7 +1477,7 @@ bot.on("message:text", async (ctx) => {
             `📝 **Strategy:** ${instructions}\n` +
             `🏦 **Escrow Address:** \`${escrowAddress}\`\n\n` +
             `⚠️ **Important - Funding Required:**\n` +
-            `Before your agent can execute trades, you must fund its escrow address with the tokens you want to trade. Send your desired trading tokens (e.g., SEI, USDC, etc.) to the escrow address above.\n\n` +
+            `Before your agent can execute trades, you must fund its escrow address with the tokens you want to trade. Send your desired trading tokens (e.g., DUCK, USDC, etc.) to the escrow address above.\n\n` +
             `💡 **Note:** Your agent can only trade with tokens available in its escrow balance. The bot will not be able to place trades until the escrow is funded.\n\n` +
             `✅ Your agent is now ready to help with trading decisions once funded!`,
           { reply_markup: keyboard, parse_mode: "Markdown" }
@@ -1647,16 +1639,16 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
 
   try {
     const usdtBalance = await getUSDTBalance(agent.escrow_address);
-    const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
+    const actorDuckBalance = await getActorDuckBalance(userId, agent.agent_name);
 
     const hasUsdt = parseFloat(usdtBalance) > 0;
-    const hasSei = parseFloat(actorSeiBalance) > 0;
+    const hasDuck = parseFloat(actorDuckBalance) > 0;
 
-    if (!hasUsdt || !hasSei) {
+    if (!hasUsdt || !hasDuck) {
       const actorAddress = await getActorAddress(userId, agent.agent_name);
 
       let message = "❌ **Cannot generate trade suggestion**\n\n";
-      message += "Your agent needs both USDT and SEI to execute trades:\n\n";
+      message += "Your agent needs both USDT and DUCK to execute trades:\n\n";
 
       if (!hasUsdt) {
         message += `🏦 **Missing USDT** in escrow\n`;
@@ -1665,11 +1657,11 @@ bot.callbackQuery(/^trade_suggestion_(\d+)$/, async (ctx) => {
         message += `✅ USDT available in escrow: ${usdtBalance} USDT\n\n`;
       }
 
-      if (!hasSei) {
-        message += `⚡ **Missing SEI** for gas fees\n`;
-        message += `Send SEI to: \`${actorAddress}\`\n\n`;
+      if (!hasDuck) {
+        message += `⚡ **Missing DUCK** for gas fees\n`;
+        message += `Send DUCK to: \`${actorAddress}\`\n\n`;
       } else {
-        message += `✅ SEI available for gas: ${actorSeiBalance} SEI\n\n`;
+        message += `✅ DUCK available for gas: ${actorDuckBalance} DUCK\n\n`;
       }
 
       message += "💡 Use the 'Fund Agent' button to get funding instructions.";
@@ -1923,16 +1915,16 @@ bot.callbackQuery(/^execute_trade_(\d+)$/, async (ctx) => {
 
   try {
     const usdtBalance = await getUSDTBalance(agent.escrow_address);
-    const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
+    const actorDuckBalance = await getActorDuckBalance(userId, agent.agent_name);
 
     const hasUsdt = parseFloat(usdtBalance) > 0;
-    const hasSei = parseFloat(actorSeiBalance) > 0;
+    const hasDuck = parseFloat(actorDuckBalance) > 0;
 
-    if (!hasUsdt || !hasSei) {
+    if (!hasUsdt || !hasDuck) {
       const actorAddress = await getActorAddress(userId, agent.agent_name);
 
       let message = "❌ **Cannot execute trade**\n\n";
-      message += "Your agent needs both USDT and SEI to execute trades:\n\n";
+      message += "Your agent needs both USDT and DUCK to execute trades:\n\n";
 
       if (!hasUsdt) {
         message += `🏦 **Missing USDT** in escrow\n`;
@@ -1941,11 +1933,11 @@ bot.callbackQuery(/^execute_trade_(\d+)$/, async (ctx) => {
         message += `✅ USDT available in escrow: ${usdtBalance} USDT\n\n`;
       }
 
-      if (!hasSei) {
-        message += `⚡ **Missing SEI** for gas fees\n`;
-        message += `Send SEI to: \`${actorAddress}\`\n\n`;
+      if (!hasDuck) {
+        message += `⚡ **Missing DUCK** for gas fees\n`;
+        message += `Send DUCK to: \`${actorAddress}\`\n\n`;
       } else {
-        message += `✅ SEI available for gas: ${actorSeiBalance} SEI\n\n`;
+        message += `✅ DUCK available for gas: ${actorDuckBalance} DUCK\n\n`;
       }
 
       message += "💡 Use the 'Fund Agent' button to get funding instructions.";
@@ -2085,19 +2077,16 @@ bot.callbackQuery(/^fund_agent_(\d+)$/, async (ctx) => {
     `To enable trading, fund BOTH addresses:\n\n` +
     `🏦 **1. Escrow Address (USDT for trading):**\n` +
     `\`${escrowAddress}\`\n\n` +
-    `⚡ **2. Actor Address (SEI for gas fees):**\n` +
+    `⚡ **2. Actor Address (DUCK for gas fees):**\n` +
     `\`${actorAddress}\`\n\n` +
     `📱 **Use the buttons below for QR codes**\n\n` +
     `💰 **USDT Contract Address:**\n` +
     `\`${definitions.USDT.address}\`\n\n` +
     `⚠️ **Important:** \n` +
     `• Send USDT → Escrow address (for buying tokens)\n` +
-    `• Send SEI → Actor address (for transaction fees)\n` +
+    `• Send DUCK → Actor address (for transaction fees)\n` +
     `• Both must be funded for trades to work!\n` +
-    `• Only use Sei network for both tokens\n\n` +
-    `🚰 **Need tokens? Get them from faucets:**\n` +
-    `• [Test USDT Faucet](https://seitrader.hetairoi.xyz/faucet)\n` +
-    `• [Sei Testnet Faucet](https://docs.sei.io/learn/faucet)`;
+    `• Only use DUCK network for both tokens\n\n`;
 
   await ctx.reply(message, {
     reply_markup: keyboard,
@@ -2168,7 +2157,7 @@ bot.callbackQuery(/^actor_qr_(\d+)$/, async (ctx) => {
     await ctx.replyWithPhoto(qrCodeUrl, {
       caption:
         `⚡ **Actor Address QR Code**\n\n` +
-        `Send SEI to this address:\n\`${actorAddress}\``,
+        `Send DUCK to this address:\n\`${actorAddress}\``,
       reply_markup: keyboard,
       parse_mode: "Markdown",
     });
@@ -2205,7 +2194,7 @@ bot.callbackQuery(/^agent_balance_(\d+)$/, async (ctx) => {
 
     const escrowBalances = await getAllTokenBalances(agent.escrow_address);
 
-    const actorSeiBalance = await getActorSEIBalance(userId, agent.agent_name);
+    const actorDuckBalance = await getActorDuckBalance(userId, agent.agent_name);
 
     let message = `💰 **${agent.agent_name} - Balances**\n\n`;
 
@@ -2222,21 +2211,21 @@ bot.callbackQuery(/^agent_balance_(\d+)$/, async (ctx) => {
     }
 
     message += `\n⛽ **Actor Balance (Gas Fees):**\n`;
-    message += `• **SEI**: \`${actorSeiBalance}\`\n\n`;
+    message += `• **DUCK**: \`${actorDuckBalance}\`\n\n`;
 
     const hasUsdt = escrowBalances.some(
       (b) => b.symbol === "USDT" && parseFloat(b.balance) > 0
     );
-    const hasSei = parseFloat(actorSeiBalance) > 0;
+    const hasDuck = parseFloat(actorDuckBalance) > 0;
 
-    if (hasUsdt && hasSei) {
-      message += `✅ **Ready for trading!** Both USDT and SEI are available.`;
-    } else if (!hasUsdt && !hasSei) {
-      message += `❌ **Not ready for trading**\nNeeds: USDT (escrow) + SEI (actor)\n\n🚰 **Need tokens? Get them from faucets:**\n• [Test USDT Faucet](https://seitrader.hetairoi.xyz/faucet)\n• [Sei Testnet Faucet](https://docs.sei.io/learn/faucet)`;
+    if (hasUsdt && hasDuck) {
+      message += `✅ **Ready for trading!** Both USDT and DUCK are available.`;
+    } else if (!hasUsdt && !hasDuck) {
+      message += `❌ **Not ready for trading**\nNeeds: USDT (escrow) + DUCK (actor)\n\n🚰`;
     } else if (!hasUsdt) {
-      message += `⚠️ **Missing USDT** in escrow for trading\n\n🚰 **Get USDT from:** [Test USDT Faucet](https://seitrader.hetairoi.xyz/faucet)`;
+      message += `⚠️ **Missing USDT** in escrow for trading\n\n🚰`;
     } else {
-      message += `⚠️ **Missing SEI** in actor for gas fees\n\n🚰 **Get SEI from:** [Sei Testnet Faucet](https://docs.sei.io/learn/faucet)`;
+      message += `⚠️ **Missing DUCK** in actor for gas fees\n\n🚰`;
     }
     const keyboard = new InlineKeyboard()
       .text("🔄 Refresh Balance", `agent_balance_${agentId}`)

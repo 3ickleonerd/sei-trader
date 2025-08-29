@@ -1,7 +1,8 @@
 import * as viem from "viem";
 import { hardhat } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { duckchainMainnnet } from "../duckchainMainnet";
+import { duckchainMainnet } from "../duckchainMainnet";
+import { Chain } from "viem";
 import CaretOrchestrator from "../artifacts/src/CaretOrchestrator.sol/CaretOrchestrator.json";
 import CaretEscrow from "../artifacts/src/CaretEscrow.sol/CaretEscrow.json";
 import USDT from "../artifacts/src/usdt.sol/USDT.json";
@@ -17,7 +18,7 @@ if (!privateKey || !viem.isHex(privateKey)) {
 }
 
 const getChain = () => {
-  if (isDuck) return duckchainMainnnet;
+  if (isDuck) return duckchainMainnet;
   return hardhat;
 };
 
@@ -29,11 +30,25 @@ const getAccount = () => {
   );
 };
 
+const getRpcUrl = () => {
+  const chain = getChain();
+  if (
+    chain.rpcUrls &&
+    chain.rpcUrls.default &&
+    chain.rpcUrls.default.http &&
+    chain.rpcUrls.default.http.length > 0
+  ) {
+    return chain.rpcUrls.default.http[0];
+  }
+  // fallback for hardhat
+  return "http://127.0.0.1:8545";
+};
+
 const client = viem
   .createWalletClient({
-    chain: getChain(),
+    chain: getChain() as Chain,
     account: getAccount(),
-    transport: viem.http(getChain().rpcUrls.default.http[0]),
+    transport: viem.http(getRpcUrl()),
   })
   .extend(viem.publicActions);
 
@@ -79,6 +94,7 @@ async function main() {
     abi: USDT.abi,
     bytecode: USDT.bytecode,
     args: [],
+    chain: getChain() as Chain,
   });
 
   const usdtReceipt = await client.waitForTransactionReceipt({
@@ -94,6 +110,7 @@ async function main() {
     abi: CaretOrchestrator.abi,
     bytecode: CaretOrchestrator.bytecode,
     args: [serverAddress, usdtReceipt.contractAddress],
+    chain: getChain() as Chain,
   });
 
   const orchestratorReceipt = await client.waitForTransactionReceipt({
@@ -117,7 +134,7 @@ async function main() {
   > = {};
 
   for (const token of tokens) {
-    const testTokenName = `Test ${token.name}`;
+    const testTokenName = `${token.name}`;
     const testTokenSymbol = token.symbol;
 
     console.log(`Deploying ${testTokenName} (${testTokenSymbol})...`);
@@ -126,6 +143,7 @@ async function main() {
       abi: TestToken.abi,
       bytecode: TestToken.bytecode,
       args: [testTokenName, testTokenSymbol, usdtReceipt.contractAddress],
+      chain: getChain() as Chain,
     });
 
     const tokenReceipt = await client.waitForTransactionReceipt({
