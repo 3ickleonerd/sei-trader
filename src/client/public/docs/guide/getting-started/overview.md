@@ -2,13 +2,6 @@
 
 Welcome to Smart Duck, the AI-powered cryptocurrency trading bot for the DuckChain network! This guide will walk you through everything you need to know to start trading with AI assistance.
 
-## 🚀 Quick Start - Get Test Tokens
-
-**Currently deployed on DuckChain Testnet with test tokens available to trade. We provide test USDT - no real money involved.**
-
-1. **Test USDT Faucet**: https://smartduck.hetairoi.xyz/faucet
-2. **DuckChain Faucet**: https://docs.duckchain.io/learn/faucet
-
 ## What is Smart Duck?
 
 Smart Duck is an AI-powered cryptocurrency trading bot specifically designed for the DuckChain network. It combines top-of-the-line fine-tuned latest AI models with smart contract-based escrow systems to provide secure, intelligent trading capabilities through a Telegram interface.

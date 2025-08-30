@@ -423,6 +423,7 @@ async function getUSDTBalance(escrowAddress: string): Promise<string> {
 
     const balanceFormatted = Number(balance) / Math.pow(10, Number(decimals));
     return balanceFormatted.toFixed(2);
+    //return "0.000000";
   } catch (error) {
     console.error("Error fetching USDT balance:", error);
     return "0.000000";
@@ -2394,7 +2395,7 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
     const tokenSymbol = td.token.toUpperCase();
 
     if (!definitions.tokens || !definitions.tokens[tokenSymbol]) {
-      // return ctx.reply(`❌ Token ${tokenSymbol} not available for trading.`);
+      return ctx.reply(`❌ Token ${tokenSymbol} not available for trading.`);
     }
 
     console.log(`=== EXECUTION HANDLER: accept_trade_(\d+)_([a-z0-9]+) ===`);
@@ -2441,12 +2442,12 @@ bot.callbackQuery(/^accept_trade_(\d+)_([a-z0-9]+)$/, async (ctx) => {
       td.tradeType || "buy"
     );
 
-    //sleepSync(3000);
+    sleepSync(3000);
 
     await safeDeleteMessage(ctx, loadingMessage.message_id);
 
-    //if (!result.success) {
-    if (result.success) {
+    if (!result.success) {
+    //if (result.success) {
       tradeDataStore.delete(tradeId);
 
       const keyboard = new InlineKeyboard()
