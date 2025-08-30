@@ -51,7 +51,7 @@ class MarketDataCache {
   private backgroundQueue: Set<string> = new Set();
   
   async warmEssentialCache(): Promise<void> {
-    const priorityTokens = ["WSEI", "WBTC", "WETH", "USDT"];
+    const priorityTokens = ["TON", "WBTC", "WETH", "USDT"];
     
     // Parallel data fetching
     const promises = priorityTokens.map(token => 

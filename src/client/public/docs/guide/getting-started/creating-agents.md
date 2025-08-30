@@ -84,7 +84,7 @@ You can create multiple agents for different purposes:
 
 💰 Holdings:
    USDT: 145.80
-   WSEI: 50.00 (~$21.00)
+   TON: 50.00 (~$21.00)
    WBTC: 0.0015 (~$79.00)
 
 🏦 Addresses:

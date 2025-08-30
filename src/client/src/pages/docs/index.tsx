@@ -20,7 +20,7 @@ const topics: Array<{
         icon: "BookOpen",
         subtopics: [
             { id: "overview", title: "Overview", file: "getting-started/overview.md" },
-            { id: "accessing-smart-duck", title: "Accessing Smart Duck", file: "getting-started/accessing-sei-trader.md" },
+            { id: "accessing-smart-duck", title: "Accessing Smart Duck", file: "getting-started/accessing-smart-duck.md" },
             { id: "creating-agents", title: "Creating Agents", file: "getting-started/creating-agents.md" },
             { id: "funding-agents", title: "Funding Agents", file: "getting-started/funding-agents.md" },
             { id: "trading-with-ai", title: "Trading with AI", file: "getting-started/trading-with-ai.md" },

@@ -10,7 +10,7 @@ interface TncPageOptions {
 export function generateTncHtml(options: TncPageOptions = {}): string {
   const {
     theme = "light",
-    title = "Terms & Conditions - Caret Sei Trading Bot",
+    title = "Terms & Conditions - Smart Duck Trading Bot",
   } = options;
 
   const latestTncPath = getLatestTncFile();
@@ -119,7 +119,7 @@ export function generateTncHtml(options: TncPageOptions = {}): string {
     <div class="container">
         <div class="header">
             <h1>Terms & Conditions</h1>
-            <p>Caret Sei Trading Bot Terms of Service</p>
+            <p>Smart Duck Trading Bot Terms of Service</p>
         </div>
         
         <div class="tnc-content">

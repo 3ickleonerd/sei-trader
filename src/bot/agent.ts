@@ -189,7 +189,7 @@ export class Agent {
       If no specific token is mentioned, suggest the most relevant one based on context.
       If multiple tokens are mentioned, pick the primary one for trading.
       
-      Remember: w(wrapped) tokens may be referred to by their original name (wSEI as SEI, wBTC as BTC).`,
+      Remember: w(wrapped) tokens may be referred to by their original name.`,
     });
 
     tickerAgent.responseJsonSchema = {

@@ -12,7 +12,7 @@ graph TB
         ESC2[CaretEscrow 2<br/>Agent Funds]
         ESC3[CaretEscrow N<br/>Agent Funds]
         TOKEN1[USDT Contract]
-        TOKEN2[WSEI Contract]
+        TOKEN2[TON Contract]
         TOKEN3[Token Contracts]
     end
     

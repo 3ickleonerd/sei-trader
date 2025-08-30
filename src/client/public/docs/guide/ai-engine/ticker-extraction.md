@@ -32,10 +32,8 @@ async extractTicker(prompt: string): Promise<TokenExtractionResult> {
 ```
 
 ### Supported Token Formats
-- **Standard Symbols**: WSEI, WBTC, WETH, USDT
-- **Alternative Names**: "Wrapped SEI", "Bitcoin", "Ethereum"
-- **Partial Matches**: "SEI" matches "WSEI"
-- **Case Insensitive**: "wsei", "WSEI", "Wsei" all match
+- **Standard Symbols**: TON, WBTC, WETH, USDT
+- **Alternative Names**: "Wrapped TON", "Bitcoin", "Ethereum"
 
 ## Token Registry Integration
 
@@ -43,10 +41,10 @@ async extractTicker(prompt: string): Promise<TokenExtractionResult> {
 // Token registry with metadata
 const tokens = [
   {
-    symbol: "WSEI",
-    name: "Wrapped SEI", 
-    cg_id: "sei-network",
-    aliases: ["SEI", "Wrapped SEI"]
+    symbol: "TON",
+    name: "Wrapped TON", 
+    cg_id: "ton-network",
+    aliases: ["TON", "Wrapped TON"]
   },
   {
     symbol: "WBTC",

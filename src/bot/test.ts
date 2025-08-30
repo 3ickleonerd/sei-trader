@@ -12,10 +12,10 @@ async function testComprehensiveWorkflow() {
   const testCases = [
     { prompt: "What's the best crypto to trade right now?", type: "generic" },
     {
-      prompt: "I want to trade SEI, what's a good entry point?",
+      prompt: "I want to trade TON, what's a good entry point?",
       type: "specific",
     },
-    { prompt: "Should I buy WSEI or WBTC today?", type: "comparison" },
+    { prompt: "Should I buy TON or WBTC today?", type: "comparison" },
     { prompt: "Give me stock trading advice", type: "invalid" },
     { prompt: "Tell me about WETH volatility and risk", type: "analysis" },
   ];

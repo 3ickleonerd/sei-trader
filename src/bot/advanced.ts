@@ -201,7 +201,7 @@ export async function demonstrateAdvancedFeatures() {
   });
 
   const userPrompt =
-    "I want to make a high-confidence trade on WSEI. Give me the best possible analysis.";
+    "I want to make a high-confidence trade on TON. Give me the best possible analysis.";
 
   const result = await advancedAgent.processTradeRequest(userPrompt);
 

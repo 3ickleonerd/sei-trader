@@ -48,7 +48,7 @@ export default function HomePage() {
                                         </Link>
                                     </Button>
                                     <Button variant="link" size="lg" className="w-full sm:w-auto" asChild>
-                                        <a href="https://youtu.be/J-MeWAVusO8?si=J5DDxoxRt538BH2n" target="_blank" rel="noopener noreferrer">
+                                        <a href="https://youtu.be/" target="_blank" rel="noopener noreferrer">
                                             watch demo
                                         </a>
                                     </Button>   
@@ -104,7 +104,7 @@ export default function HomePage() {
                             </div>
                             <div className="flex items-center gap-6 text-sm">
                                 <a
-                                    href="https://x.com/SmartDuck"
+                                    href="https://x.com/"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-muted-foreground hover:text-primary flex items-center gap-2 transition-colors"

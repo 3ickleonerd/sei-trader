@@ -39,7 +39,7 @@ const MAX_CACHE_SIZE = 10;
 const BACKGROUND_FETCH_DELAY = 2000;
 const API_RATE_LIMIT_DELAY = 1000;
 
-const PRIORITY_TOKENS = ["WSEI", "WBTC", "WETH", "USDT", "USDC"];
+const PRIORITY_TOKENS = ["TON", "WBTC", "WETH", "USDT", "USDC"];
 
 const backgroundFetchQueue = new Set<string>();
 

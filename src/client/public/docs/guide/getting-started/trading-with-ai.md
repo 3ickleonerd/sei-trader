@@ -6,23 +6,22 @@ Smart Duck understands natural language! You can ask questions like:
 
 ### Market Analysis:
 - "What's the best crypto to trade right now?"
-- "Should I buy WSEI today?"
+- "Should I buy TON today?"
 - "How is WBTC performing this week?"
 
 ### Specific Trades:
-- "I want to buy WSEI, what's a good entry point?"
+- "I want to buy TON, what's a good entry point?"
 - "Should I sell my WETH position?"
-- "Compare WSEI vs WBTC for swing trading"
+- "Compare TON vs WBTC for swing trading"
 
 ### Risk Assessment:
-- "What are the risks of trading iSEI?"
+- "What are the risks of trading TON"
 - "Is now a good time to enter the market?"
-- "How volatile is SEIYAN?"
 
 ## AI Analysis Example
 
 ```
-📊 AI Analysis: WSEI
+📊 AI Analysis: TON
 
 Current Price: $0.42
 24h Change: +5.2%
@@ -33,7 +32,7 @@ Stop Loss: $0.38 (-10%)
 Take Profit: $0.48 (+15%)
 
 💭 AI Reasoning:
-WSEI shows bullish momentum with strong volume 
+TON shows bullish momentum with strong volume 
 increase. Recent support at $0.38 provides good 
 risk/reward ratio. Consider 2-3% position size.
 
@@ -52,11 +51,11 @@ When you're ready to execute a trade:
 4. **Monitor**: Track your position
 
 ```
-🔄 Execute Trade: Buy WSEI
+🔄 Execute Trade: Buy TON
 
 💰 Trade Amount: 50 USDT
-📈 Expected WSEI: ~119.05 WSEI
-💸 Est. Gas Fee: 0.01 SEI
+📈 Expected TON: ~119.05 TON
+💸 Est. Gas Fee: 0.01 TON
 ⏰ Est. Execution: 30 seconds
 
 ⚠️ This trade cannot be undone
@@ -79,9 +78,8 @@ User: "What's happening in the crypto market today?"
 📈 DuckChain Trend: +3.2% (24h)
 
 🔥 Top Opportunities:
-1. WSEI - Bullish breakout pattern
-2. iSEI - Strong staking yields  
-3. WBTC - Bitcoin correlation play
+1. TON - Bullish breakout pattern
+2. WBTC - Bitcoin correlation play
 
 ⚠️ Risk Factors:
 - High volatility in DeFi tokens
@@ -102,12 +100,12 @@ stop-losses in current market conditions.
 
 Current Allocation:
 🟦 USDT: 60% (Safe Haven)
-🟩 WSEI: 25% (Growth)
+🟩 TON: 25% (Growth)
 🟨 WBTC: 15% (Store of Value)
 
 💡 AI Recommendations:
 - Consider reducing USDT allocation
-- Add exposure to iSEI for yield
+- Add exposure to TON for yield
 - Maintain WBTC position for stability
 
 Risk Score: 6/10 (Moderate)
@@ -121,7 +119,7 @@ Diversification: Good
 ```
 🔔 Price Alert Setup
 
-Token: WSEI
+Token: TON
 Current Price: $0.42
 
 Alert Conditions:
@@ -138,7 +136,7 @@ Alert Conditions:
 - **Position Size**: 1-3% of portfolio per trade
 - **Stop Loss**: 5-10% below entry
 - **Take Profit**: 15-25% above entry
-- **Focus**: Blue-chip tokens (WSEI, WBTC, WETH)
+- **Focus**: Blue-chip tokens (TON, WBTC, WETH)
 
 ### Moderate Trading
 - **Position Size**: 3-7% of portfolio per trade

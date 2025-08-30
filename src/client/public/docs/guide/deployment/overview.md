@@ -27,8 +27,8 @@ bun --version
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/seiTrader.git
-cd seiTrader
+git clone https://github.com/h-sameri/smart-duck.git
+cd smart-duck
 
 # Install dependencies
 bun install
@@ -165,8 +165,8 @@ CMD ["bun", "run", "start"]
 
 ```bash
 # Build and run Docker container
-docker build -t sei-trader .
-docker run -p 3000:3000 --env-file .env sei-trader
+docker build -t smart-duck .
+docker run -p 3000:3000 --env-file .env smart-duck
 ```
 
 ## Smart Contract Deployment
@@ -205,12 +205,12 @@ export const CONTRACT_ADDRESSES = {
   testnet: {
     orchestrator: "0x...",
     usdt: "0x...",
-    wsei: "0x..."
+    ton: "0x..."
   },
   mainnet: {
     orchestrator: "0x...", // Future deployment
     usdt: "0x...", // Future deployment
-    wsei: "0x..." // Future deployment
+    ton: "0x..." // Future deployment
   }
 };
 ```

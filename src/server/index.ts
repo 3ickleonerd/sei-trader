@@ -61,7 +61,7 @@ export default {
     if (url.pathname === "/tnc") {
       const theme = url.searchParams.get("theme") === "dark" ? "dark" : "light";
       const html = generateTncHtml({
-        title: "Terms & Conditions - Caret Sei Trading Bot",
+        title: "Terms & Conditions - Smart Duck Trading Bot",
         theme,
       });
 

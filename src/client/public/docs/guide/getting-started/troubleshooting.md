@@ -25,7 +25,7 @@ The token you mentioned isn't currently supported
 by Smart Duck.
 
 Supported tokens:
-WSEI, WBTC, WETH, iSEI, USDT, USDC, SEIYAN, 
+TON, WBTC, WETH, USDT, USDC, 
 FXS, ROCK, ASTRO, and 95+ more.
 
 [View Full List] [Suggest Token] [Try Again]
@@ -70,11 +70,6 @@ Options:
 [FAQ] [Contact Support] [Report Bug]
 ```
 
-### Contact Information
-- **Live Chat**: Available 24/7 within the bot
-- **Email Support**: support@seitrader.ai
-- **Community**: Join our Telegram community
-- **Documentation**: docs.seitrader.ai
 
 ## Security Best Practices
 
@@ -120,7 +115,7 @@ Cryptocurrency trading involves significant risks:
 
 ### Making the Most of AI
 
-- **Ask Specific Questions**: "Should I buy WSEI at $0.42?" vs "What should I buy?"
+- **Ask Specific Questions**: "Should I buy TON at $0.42?" vs "What should I buy?"
 - **Provide Context**: Mention your risk tolerance and timeline
 - **Verify Recommendations**: Cross-check AI advice with your own research
 - **Track Performance**: Monitor which AI recommendations work best
